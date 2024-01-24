@@ -1,0 +1,99 @@
+#include <functional>
+#include <vector>
+
+#include "CompPsi.h"
+
+namespace Elementary
+{
+	// Class to create segmentation array of an arithmetic function f
+	// such as 1 (indicator function) & mu (Möbius function).
+	template <class T>
+	class SegmentationArray
+	{
+	private:
+		uint64_t N;
+		uint64_t M;
+		double delta;
+		double delta_inv;
+
+		// Template for segmentation array with an O(1) implementation for F(A) = sum_{n <= A} f(n).
+		// T should support subtraction.
+		std::vector<T> SegmentAbstractFunc(uint64_t N, std::function<T(uint64_t)> F) const
+		{
+			int k_max = index(N);
+			std::vector<T> segmentF;
+
+			double x = 1.0, y;
+			for (int k = 0; k <= k_max; k++)
+			{
+				y = std::pow(2, delta * (k+1));
+				// By construction we have that [2^{kd}, 2^{(k+1)d}) = [x, y).
+				// Thus, the corresponding sum is given by F(y0) - F(x0), 
+				// where y0 and x0 are the largest integers < y and x respectively.
+				segmentF.push_back(F((uint64_t)ceil(y) - 1) - F((uint64_t)ceil(x) - 1));
+				x = y;
+			}
+
+			return segmentF;
+		}
+
+	public:
+		// Constructor; sets up the (constant) segmentation arrays.
+		SegmentationArray(uint64_t N) :
+			delta_inv(std::sqrt(N)), delta(1.0 / std::sqrt(N)), N(N), M(std::sqrt(N))
+		{
+		}
+
+		// Returns segmentation index.
+		uint64_t index(uint64_t n) const
+		{
+			return (uint64_t)(std::log2(n) * delta_inv);
+		}
+
+		// Returns segmentation array of 1.
+		std::vector<T> One() const
+		{
+			// Note that F(n) = sum_{j<=n} 1 = n.
+			std::function<uint64_t(uint64_t)> F =
+				[](uint64_t n)
+				{
+					return n;
+				};
+
+			return SegmentAbstractFunc(N, F);
+		}
+
+		// Returns segmentation array of log.
+		//std::vector<T> Log() const;
+
+		// Returns segmentation array of mu, restricted to integers <= M.
+		std::vector<T> Mu_M() const
+		{
+			uint64_t k_max = index(N);
+			std::vector<T> segmentMu(k_max + 1, 0);
+
+			std::vector<int> mu = sieve.MuSegmented(1, M);
+			for (int n = 1; n <= M; n++)
+			{
+				segmentMu[index(n)] += mu[n - 1];
+			}
+
+			return segmentMu;
+		}
+
+		// Returns segmentation array of Lambda, restricted to integers <= M.
+		std::vector<T> Lambda_M() const
+		{
+			uint64_t k_max = index(N);
+			std::vector<T> segmentLambda(k_max + 1, 0);
+
+			std::vector<Types::Log> Lambda = sieve.LambdaSegmented(1, M);
+			for (int n = 1; n <= M; n++)
+			{
+				segmentLambda[index(n)] += (T) Lambda[n - 1].numerical();
+			}
+
+			return segmentLambda;
+		}
+	};
+}
