@@ -16,7 +16,7 @@ namespace Fourier
 {
 	// Abstract class defining FFT and IFFT operations on vectors.
 	// (Real -(FFT)-> Complex -(IFFT)-> Real; RR = Real, CC = Complex)
-	template <typename RR, typename CC, typename CC_In, typename CC_Out>
+	template <typename RR, typename CC, typename CC_Container>
 	class FFTLibrary
 	{
 	public:
@@ -24,7 +24,7 @@ namespace Fourier
 		std::vector<RR> Convolve(std::vector<std::vector<RR>> vs)
 		{
 			// Initialize the Fourier transform of the convolution of 'vs'.
-			CC_In Fv;
+			CC_Container Fv;
 			InitializeContainer(Fv);
 
 			// Compute the DFT of the elements of vs, and
@@ -35,7 +35,7 @@ namespace Fourier
 				vs[i].insert(vs[i].end(), size - vs[i].size(), RR(0));
 
 				// Apply FFT and process the resulting vector in Fv.
-				CC_Out Fv_i = FFT(vs[i]);
+				CC_Container Fv_i = FFT(vs[i]);
 				Multiply(Fv, Fv_i);
 			}
 
@@ -55,22 +55,22 @@ namespace Fourier
 		int size = 0;
 
 	private:
-		virtual void InitializeContainer(CC_In &Fv) = 0;
+		virtual void InitializeContainer(CC_Container &Fv) = 0;
 
-		virtual void DestructContainer(CC_In& Fv) {};
-		virtual void Multiply(CC_In &Fv, CC_Out Fv_i) = 0;
+		virtual void DestructContainer(CC_Container& Fv) {};
+		virtual void Multiply(CC_Container &Fv, CC_Container Fv_i) = 0;
 
 		// Pure virtual function that computes the Fourier transform of a vector.
 		// (Implementation to be provided by subclass.)
-		virtual CC_Out FFT(std::vector<RR> in) = 0;
+		virtual CC_Container FFT(std::vector<RR> in) = 0;
 
 		// Pure virtual function that computes the inverse Fourier transform of a vector.
 		// (Implementation to be provided by subclass.)
-		virtual std::vector<RR> IFFT(CC_In in) = 0;
+		virtual std::vector<RR> IFFT(CC_Container in) = 0;
 	};
 
 	// Subclass of FFTLibrary using the FFTW library.
-	class FFTW : public FFTLibrary<double, fftw_complex, fftw_complex*, fftw_complex*>
+	class FFTW : public FFTLibrary<double, fftw_complex, fftw_complex*>
 	{
 	public:
 		// Constructor
@@ -171,7 +171,7 @@ namespace Fourier
 
 	};
 
-	class FFTSimple : public FFTLibrary<float_dec_100, Complex, std::vector<Complex>, std::vector<Complex>>
+	class FFTSimple : public FFTLibrary<float_dec_100, Complex, std::vector<Complex>>
 	{
 	public:
 		FFTSimple(int size, int n)
@@ -218,7 +218,7 @@ namespace Fourier
 				return Fv;
 			}
 
-			int m = n / 2;
+			int m = n >> 1;
 			std::vector<float_dec_100> v_even(m), v_odd(m);
 			for (int k = 0; k < m; k++)
 			{

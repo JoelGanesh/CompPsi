@@ -49,5 +49,17 @@ namespace Elementary
 		// apart from a single edit of initializing qm to 1.
 		static std::tuple<uint64_t, uint64_t, uint64_t, int> ApprByRedFrac(double alpha, uint64_t Q);
 	};
+
+	// Returns the first integer k >= n congruent to a modulo q.
+	// We assume that 0 <= a < q.
+	static int FirstCongruenceAfter(int n, int a, int q)
+	{
+		int k = (n + a) - (n % q);
+		if (a < n % q)
+		{
+			k += q;
+		}
+		return k;
+	}
 }
 #endif
