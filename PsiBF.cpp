@@ -18,6 +18,7 @@ namespace CompPsi
             //std::cout << std::setprecision(100) << k << " * " << log << std::endl;
             sum += k * log;
         }
+        std::cout << "Psi(M) = " << sum << std::endl;
         return sum;
     }
 }

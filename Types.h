@@ -11,6 +11,7 @@
 #include <boost/icl/interval.hpp>
 #include <boost/icl/interval_set.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
+#include <fftw3.h>
 
 typedef int     Exponent;
 typedef uint64_t  Prime;
@@ -22,13 +23,60 @@ typedef std::vector<Tuple> Tuples;
 // Boost library shortcut typenames.
 using interval = boost::icl::interval<int>;
 using interval_set = boost::icl::interval_set<int>;
-using float_dec_100 = boost::multiprecision::cpp_dec_float_100;
+using float_dec_100 = boost::multiprecision::cpp_dec_float_50;
 using complex_128 = boost::multiprecision::complex128;
 
+using namespace boost::multiprecision;
 //typedef boost::multiprecision::uint128_t uint128_t;
 
 namespace Types
 {
+	struct Complex
+	{
+		float_dec_100 re;
+		float_dec_100 im;
+
+		Complex(float_dec_100 real = float_dec_100(0), float_dec_100 imag = float_dec_100(0))
+		{
+			re = real;
+			im = imag;
+		}
+
+		Complex& operator*=(Complex z)
+		{
+			//std::cout << std::string(*this) << " " << std::string(z) << std::endl;
+			float_dec_100 temp = re * z.re - im * z.im;
+			float_dec_100 temp2 = re * z.im + im * z.re;
+
+			re = temp;
+			im = temp2;
+
+			//std::cout << std::string(*this) << std::endl;
+
+			return *this;
+		}
+
+		Complex operator*(Complex z)
+		{
+			return Complex(re * z.re - im * z.im, re * z.im + im * z.re);
+		}
+
+		Complex operator+(Complex z)
+		{
+			return Complex(re + z.re, im + z.im);
+		}
+
+		Complex operator-(Complex z)
+		{
+			return Complex(re - z.re, im - z.im);
+		}
+
+		operator std::string()
+		{
+			return re.str(6) + " + " + im.str(6) + "i";
+		}
+	};
+
 	struct Rectangle
 	{
 		uint64_t N, M, m0, d0, a, b, a0, a0_inv, q, s;

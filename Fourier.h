@@ -15,58 +15,34 @@ using namespace Types;
 namespace Fourier
 {
 	// Abstract class defining FFT and IFFT operations on vectors.
-	template <typename T_real, typename T_complex>
+	// (Real -(FFT)-> Complex -(IFFT)-> Real; RR = Real, CC = Complex)
+	template <typename RR, typename CC, typename CC_In, typename CC_Out>
 	class FFTLibrary
 	{
 	public:
 		// Computes the modular convolution of a list of vectors.
-		std::vector<T_real> Convolve(std::vector<std::vector<T_real>> vs)
+		std::vector<RR> Convolve(std::vector<std::vector<RR>> vs)
 		{
 			// Initialize the Fourier transform of the convolution of 'vs'.
-			std::unique_ptr<T_complex[]> Fv = std::make_unique<T_complex[]>(size);
-			std::function<int(std::complex<float_dec_100>)> f = [](std::complex<float_dec_100> c) { std::cout << c.real() << "+" << c.imag() << "i" << " "; return 0; };
-			for (int i = 0; i < size; i++)
-			{
-				Fv[i] = { float_dec_100(1), float_dec_100(0) }; // Fv[i][IM] is already set to 0.
-				f(Fv[i]);
-			}
-			std::cout << std::endl;
+			CC_In Fv;
+			InitializeContainer(Fv);
 
 			// Compute the DFT of the elements of vs, and
 			// store the results in Fv by computing term-wise products.
 			for (int i = 0; i < vs.size(); i++)
 			{
 				// Pad zeros to the end of vs[i] so that the length is size.
-				T_real zero(0);
-				vs[i].insert(vs[i].end(), size - vs[i].size(), zero);
+				vs[i].insert(vs[i].end(), size - vs[i].size(), RR(0));
 
-				// Apply FFT 
-				T_complex* Fv_i = FFT(vs[i]);
-
-				for (int i = 0; i < size; i++)
-				{
-					f(Fv_i[i]);
-				}
-				//Utility::IO::Print(Fv_i);
-				for (int j = 0; j < size; ++j)
-				{
-					Fv[j] *= Fv_i[j];
-					// We multiply Fv[j] by Fv_i[j].
-					/*float_dec_100 Fv_j_Re = Fv[j].real();
-					float_dec_100 Fv_j_Im = Fv[j].imag();
-					float_dec_100 Fv_i_j_Re = Fv_i[j].real();
-					float_dec_100 Fv_i_j_Im = Fv_i[j].imag();
-
-					float_dec_100 new_Fv_j_Re = Fv_j_Re * Fv_i_j_Re - Fv_j_Im * Fv_i_j_Im;
-					float_dec_100 new_Fv_j_Im = Fv_j_Re * Fv_i_j_Im + Fv_j_Im * Fv_i_j_Re;
-					Fv[j] = std::complex<float_dec_100>(new_Fv_j_Re, new_Fv_j_Im);*/
-					//Fv[j][RE] = Fv_j_Re * Fv_i[j][RE] - Fv_j_Im * Fv_i[j][IM];
-					//Fv[j][IM] = Fv_j_Re * Fv_i[j][IM] + Fv_j_Im * Fv_i[j][RE];
-				}
+				// Apply FFT and process the resulting vector in Fv.
+				CC_Out Fv_i = FFT(vs[i]);
+				Multiply(Fv, Fv_i);
 			}
 
-			// Apply the inverse DFT, normalize the result and return it.
-			std::vector<T_real> v = IFFT(Fv.get());
+			// Apply the inverse DFT, remove allocated memory for Fv. The resulting vector should still be normalized.
+			std::vector<RR> v = IFFT(Fv);
+			DestructContainer(Fv);
+			Utility::IO::Print(v);
 			for (size_t i = 0; i < v.size(); i++)
 			{
 				v[i] /= size;
@@ -79,17 +55,22 @@ namespace Fourier
 		int size = 0;
 
 	private:
+		virtual void InitializeContainer(CC_In &Fv) = 0;
+
+		virtual void DestructContainer(CC_In& Fv) {};
+		virtual void Multiply(CC_In &Fv, CC_Out Fv_i) = 0;
+
 		// Pure virtual function that computes the Fourier transform of a vector.
 		// (Implementation to be provided by subclass.)
-		virtual T_complex* FFT(std::vector<T_real> in) = 0;
+		virtual CC_Out FFT(std::vector<RR> in) = 0;
 
 		// Pure virtual function that computes the inverse Fourier transform of a vector.
 		// (Implementation to be provided by subclass.)
-		virtual std::vector<T_real> IFFT(T_complex* in) = 0;
+		virtual std::vector<RR> IFFT(CC_In in) = 0;
 	};
 
 	// Subclass of FFTLibrary using the FFTW library.
-	class FFTW : public FFTLibrary<double, fftw_complex>
+	class FFTW : public FFTLibrary<double, fftw_complex, fftw_complex*, fftw_complex*>
 	{
 	public:
 		// Constructor
@@ -137,6 +118,32 @@ namespace Fourier
 		fftw_plan forward_plan;
 		fftw_plan backward_plan;
 
+		void InitializeContainer(fftw_complex* &Fv) override
+		{
+			Fv = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * this->size);
+			for (int i = 0; i < size; i++)
+			{
+				Fv[i][RE] = 1.0;
+				Fv[i][IM] = 0.0;
+			}
+		}
+
+		void DestructContainer(fftw_complex*& Fv) override
+		{
+			fftw_free(Fv);
+		}
+
+		void Multiply(fftw_complex* &Fv, fftw_complex* Fv_i) override
+		{
+			for (int j = 0; j < size; j++)
+			{
+				double temp = Fv[j][RE] * Fv_i[j][RE] - Fv[j][IM] * Fv_i[j][IM];
+
+				Fv[j][IM] = Fv[j][RE] * Fv_i[j][IM] + Fv[j][IM] * Fv_i[j][RE];
+				Fv[j][RE] = temp;
+			}
+		}
+
 		// Implementation of FFT using the FFTW library.
 		fftw_complex* FFT(std::vector<double> v) override
 		{
@@ -164,7 +171,7 @@ namespace Fourier
 
 	};
 
-	class FFTSimple : public FFTLibrary<float_dec_100, std::complex<float_dec_100>>
+	class FFTSimple : public FFTLibrary<float_dec_100, Complex, std::vector<Complex>, std::vector<Complex>>
 	{
 	public:
 		FFTSimple(int size, int n)
@@ -179,75 +186,95 @@ namespace Fourier
 		}
 
 	private:
-		std::complex<float_dec_100>* FFT(std::vector<float_dec_100> v) override
+		void InitializeContainer(std::vector<Complex>& Fv) override
 		{
-			std::vector<std::complex<float_dec_100>> Fv = FFT_(v);
-			return &Fv[0];
+			Fv = std::vector<Complex>(size, Complex(1, 0));
 		}
 
-		std::vector<float_dec_100> IFFT(std::complex<float_dec_100>* Fv) override
+		void Multiply(std::vector<Complex>& Fv, std::vector<Complex> Fv_i) override
 		{
-			std::vector<std::complex<float_dec_100>> Fv_(Fv, Fv + size);
-			return IFFT_(Fv_);
+			std::function<std::string(Complex)> g = [](Complex z) { return std::string(z); };
+			std::cout << "Fv: ";
+			Utility::IO::Print(Utility::Generic::Map(Fv, g));
+			std::cout << std::endl << "Fv_i: ";
+			Utility::IO::Print(Utility::Generic::Map(Fv_i, g));
+
+			for (int j = 0; j < size; j++)
+			{
+				Fv[j] *= Fv_i[j]; // Multiplication is defined in struct Complex (in Types.h)
+			}
+			std::cout << std::endl << "Fv: ";
+			Utility::IO::Print(Utility::Generic::Map(Fv, g));
+			std::cout << std::endl;
 		}
 
-		std::vector<std::complex<float_dec_100>> FFT_(std::vector<float_dec_100> v)
+		std::vector<Complex> FFT(std::vector<float_dec_100> v) override
 		{
 			int n = v.size();
-			std::vector<std::complex<float_dec_100>> Fv(n, { float_dec_100(0), float_dec_100(0) });
+			std::vector<Complex> Fv(n);
 			if (n == 1)
 			{
-				Fv[0] = { v[0], float_dec_100(0) };
+				Fv[0].re = v[0];
 				return Fv;
 			}
 
-			int m = n >> 1;
+			int m = n / 2;
 			std::vector<float_dec_100> v_even(m), v_odd(m);
-			for (int k = 0; k < m; k += 1)
+			for (int k = 0; k < m; k++)
 			{
 				v_even[k] = v[2 * k];
 				v_odd[k] = v[2 * k + 1];
 			}
 
-			std::vector<std::complex<float_dec_100>> Fv_even = FFT_(v_even), Fv_odd = FFT_(v_odd);
+			std::vector<Complex> Fv_even = FFT(v_even), Fv_odd = FFT(v_odd);
 
 			for (int k = 0; k < m; k++)
 			{
-				float_dec_100 theta = 2 * boost::math::constants::pi<float_dec_100>() * k / n;
-				std::complex<float_dec_100> w = { boost::multiprecision::cos(theta), boost::multiprecision::sin(theta) };
+				float_dec_100 theta = (2 * boost::math::constants::pi<float_dec_100>() * k) / n;
+				Complex w(boost::multiprecision::cos(theta), boost::multiprecision::sin(theta));
 				Fv[k] = Fv_even[k] + w * Fv_odd[k];
 				Fv[k + m] = Fv_even[k] - w * Fv_odd[k];
 			}
+
+			return Fv;
 		}
 
-		std::vector<float_dec_100> IFFT_(std::vector<std::complex<float_dec_100>> Fv)
+		std::vector<float_dec_100> IFFT(std::vector<Complex> Fv) override
+		{
+			std::vector<Complex> v = IFFT_(Fv);
+			std::vector<float_dec_100> w(v.size());
+			for (int i = 0; i < w.size(); i++)
+			{
+				w[i] = v[i].re;
+			}
+			return w;
+		}
+
+		std::vector<Complex> IFFT_(std::vector<Complex> Fv)
 		{
 			int n = Fv.size();
-			std::vector<float_dec_100> v(n);
+			std::vector<Complex> v(n);
 			if (n == 1)
 			{
-				v[0] = Fv[0].real();
-				return v;
+				return Fv;
 			}
 
 			int m = n >> 1;
-			std::vector<std::complex<float_dec_100>> Fv_even(m), Fv_odd(m);
+			std::vector<Complex> Fv_even(m), Fv_odd(m);
 			for (int k = 0; k < m; k += 1)
 			{
 				Fv_even[k] = Fv[2 * k];
 				Fv_odd[k] = Fv[2 * k + 1];
 			}
 
-			std::vector<float_dec_100> v_even = IFFT_(Fv_even), v_odd = IFFT_(Fv_odd);
+			std::vector<Complex> v_even = IFFT_(Fv_even), v_odd = IFFT_(Fv_odd);
 
 			for (int k = 0; k < m; k++)
 			{
-				float_dec_100 theta = 2 * boost::math::constants::pi<float_dec_100>() * k / n;
-				std::complex<float_dec_100> w = { boost::multiprecision::cos(-theta), boost::multiprecision::sin(-theta) };
-				std::complex<float_dec_100> temp = v_even[k] + w * Fv_odd[k];
-				v[k] = temp.real();
-				temp = v_even[k] - w * Fv_odd[k];
-				v[k + m] = temp.real();
+				float_dec_100 theta = (2 * boost::math::constants::pi<float_dec_100>() * k) / n;
+				Complex w(boost::multiprecision::cos(theta), -boost::multiprecision::sin(theta));
+				v[k] = v_even[k] + w * v_odd[k];
+				v[k + m] = v_even[k] - w * v_odd[k];
 			}
 
 			return v;

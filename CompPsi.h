@@ -55,7 +55,7 @@ namespace CompPsi
         float_dec_100 Psi(uint64_t N) override
         {
             float_dec_100 result = PsiPreparation(N);
-            result += Psi0(N); // An implementation of Psi0 should be present in T.
+            result -= Psi0(N); // An implementation of Psi0 should be present in T.
             return result;
         }
 
@@ -79,6 +79,7 @@ namespace CompPsi
                 float_dec_100 k(temp);
                 result += mu[d - 1] * boost::multiprecision::lgamma(k + 1);
             }
+            std::cout << "PsiPrep: " << result << std::endl;
             return result;
         }
 

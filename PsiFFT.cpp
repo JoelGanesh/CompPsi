@@ -13,9 +13,9 @@ namespace CompPsi
     float_dec_100 PsiFFT::Psi0(uint64_t N)
     {
         Elementary::SegmentationArray<float_dec_100> segmentationArray(N);
-        const int S = N * (pow(2, 4.0 / std::sqrt(N)) - 1);
+        const int S = N * (pow(8, 1.0 / std::sqrt(N)) - 1);
         float_dec_100 result = SegmentationFFT(N, segmentationArray) - SegmentationError(N, S, segmentationArray); // mu[z] defined -> mu.size() = z+1.
-        //cout << "PsiFFT2: " << result << endl;
+        std::cout << "Psi0: " << result << std::endl;
         return result;
     }
 
@@ -25,9 +25,15 @@ namespace CompPsi
         std::vector<float_dec_100> segmentedOne = segmArray.One();
         std::vector<float_dec_100> segmentedLambda = segmArray.Lambda_M();
         std::vector<std::vector<float_dec_100>> segments{ segmentedMu, segmentedOne, segmentedLambda };
+        for (int i = 0; i < 3; i++)
+        {
+            Utility::IO::Print(segments[i]);
+        }
+
         uint64_t size = segmentedMu.size(); // Note: sizes of the segments are equal.
         Fourier::FFTSimple FFTLib(size, 3); // The parameter 3 represents the number of arrays to be convoluted.
         std::vector<float_dec_100> segmentation = FFTLib.Convolve(segments);
+        Utility::IO::Print(segmentation);
         //cout << "S: ";
         //Print(segmentation);
         float_dec_100 sum = 0;
@@ -36,7 +42,7 @@ namespace CompPsi
             sum += segmentation[k];
         }
 
-        //cout << "PsiFFTSegmentation: " << sum << endl;
+        std::cout << "PsiFFTSegmentation: " << sum << std::endl;
         return sum;
     }
 
@@ -59,9 +65,9 @@ namespace CompPsi
 
             Tuple v{ 1, INT_MAX, INT_MAX }; // First entry corresponds with mu. We take ones for mu_z since mu_z(n) = 0 whenever p^2 divides n for some prime p.
             std::vector<Tuples> subfactorizations = PsiFFT::SubFactorizations(v, factorization);
-            int q = 0;
-            std::function<int(std::vector<std::vector<int>>)> f = [q](std::vector<std::vector<int>> x) mutable { for (std::vector<int> y : x) { std::cout << "S[" << q++ << "]: "; Utility::IO::Print(y); }; return 0; };
-            Utility::Generic::Map(subfactorizations, f);
+            //int q = 0;
+            //std::function<int(std::vector<std::vector<int>>)> f = [q](std::vector<std::vector<int>> x) mutable { for (std::vector<int> y : x) { std::cout << "S[" << q++ << "]: "; Utility::IO::Print(y); }; return 0; };
+            //Utility::Generic::Map(subfactorizations, f);
             // As it is, we have all subfactorizations, i.e. a list { { a_{11}, ..., a_{1n_1} }, ..., { {a_{k1}, ..., a_{kn_k} } }, where each a_{ij} represents
             // a unique factorization of the primepower p_i^{e_i} dividing n into a fixed number of factors (determined by the size of the vector v above).
             // We now want to combine these subfactorizations to obtain all decompositions of n into that number of factors, for which we should consider the Cartesian product of these sets.
@@ -78,8 +84,8 @@ namespace CompPsi
             for (int p = 0; p < P; p++)
             {
                 std::vector<int> m = Utility::Indexation::IntToTuple(p, sizes);
-                std::cout << "m: ";
-                Utility::IO::Print(m);
+                //std::cout << "m: ";
+                //Utility::IO::Print(m);
                 // We are now considering the combination of tuples a_{1,m[1]}, ..., a_{k,m[k]}.
                 // Recall that these tuples a_{j,m[j]} contain |v| entries, corresponding to the |v| parts of a unique decomposition of the primepower p_j^{e_j}.
                 // We essentially want to finally combine the different prime powers into the |v| parts of the decomposition of n.
@@ -107,20 +113,20 @@ namespace CompPsi
                         break;
                     }
                 }
-                //std::function<int(Factorization)> g = [](Factorization h) { return h.n(); };
                 // If sum k(d_i) <= k(N), then add the term.
                 if (indexSum <= indexMax)
                 {
-                    //cout << "D: "; 
-                    //Print(Map(decomposition, g));
+                    //std::function<int(Factorization)> g = [](Factorization h) { return h.n(); };
+                    //std::cout << "D: "; 
+                    //Utility::IO::Print(Utility::Generic::Map(decomposition, g));
                     // If the decomposition looks like (d0,d1,d2), we add mu_M(d0) * Lambda_M(d1)
                     uint64_t d = decomposition[0].n();
                     uint64_t m = decomposition[1].n();
 
                     if (d <= M && m <= M)
                     {
-                        float_dec_100 contribution = segmentMu[d] * segmentLambda[m].numerical();
-                        std::cout << "Contribution: " << contribution << std::endl;
+                        float_dec_100 contribution = segmentMu[d - 1] * segmentLambda[m - 1].numerical();
+                        //std::cout << "Contribution: " << contribution << std::endl;
                         error += contribution;
                     }
                 }
