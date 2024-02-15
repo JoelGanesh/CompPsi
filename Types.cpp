@@ -26,7 +26,6 @@ namespace Types
 		return std::tuple<double, uint64_t>(beta, r0);
 	}
 
-
 	// Log implementation.
 	Log::Log(uint64_t n) : n(n) {};
 
@@ -45,16 +44,18 @@ namespace Types
 	{
 	}
 
+	PrimeFactor::operator uint64_t()
+	{
+		return (uint64_t)std::pow(prime, exponent);
+	}
+
 	PrimeFactor::operator std::string()
 	{
 		if (exponent != 1)
 		{
 			return std::to_string(prime) + "^" + std::to_string(exponent);
 		}
-		else
-		{
-			return std::to_string(prime);
-		}
+		return std::to_string(prime);
 	}
 
 	// Factorization implementation.
@@ -89,11 +90,80 @@ namespace Types
 				};
 			// Merge all PrimeFactor objects to one string and return the result.
 			return std::accumulate(std::next(primeFactors_.begin()), primeFactors_.end(),
-								   std::string(primeFactors_[0]), PFToString_fold);
+				std::string(primeFactors_[0]), PFToString_fold);
 		}
 		else // Empty product is equal to 1.
 		{
 			return "1";
 		}
 	}
+
+	/*
+	void SqFreeFactorization::AddFactor(Prime p)
+	{
+		primes_.push_back(p);
+		n_ *= p;
+	}
+
+	SqFreeFactorization::operator std::string()
+	{
+		std::string s = "Divisors: {"
+		if (!primes_.empty())
+		{
+			s += std::to_string(primes_[0]);
+			for (int i = 1; i < primes_.size(); i++)
+			{
+				s += ", " + std::to_string(primes_[i]);
+			}
+		}
+		s += "}";
+		return s;
+	}
+
+	const std::vector<Prime> SqFreeFactorization::Primes()
+	{
+		return primes_;
+	}
+
+	uint64_t SqFreeFactorization::n()
+	{
+		return n_;
+	}
+
+	void PrimeFactorization::AddFactor(Prime p)
+	{
+		primes_.push_back(p);
+		multiplicities_.push_back(1);
+		n_ *= p;
+	}
+
+	void PrimeFactorization::AddFactor(Prime p, Exponent j, PrimePower q = 0)
+	{
+		primes_.push_back(p);
+		multiplicities_.push_back(j);
+		if (q == 0)
+		{
+			q = std::pow(p, j);
+		}
+		n_ *= q;
+	}
+
+	const std::vector<Exponent> PrimeFactorization::Multiplicities()
+	{
+		return multiplicities_;
+	}
+
+	PrimeFactorization::operator std::string()
+	{
+		if (!primes_.empty())
+		{
+			std::string s = std::to_string(primes_[0]) + "^" + std::to_string(multiplicities_[0]);
+			for (int i = 1; i < primes_.size(); i++)
+			{
+				s += " * " + std::to_string(primes_[i]) + "^" + std::to_string(multiplicities_[i]);
+			}
+			return s;
+		}
+		return "1";
+	}*/
 }

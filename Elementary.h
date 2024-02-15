@@ -36,6 +36,8 @@ namespace Elementary
 
 		// Computes and returns the complete primefactorization of all integers in [N, N + S).
 		std::vector<Factorization> FactorizationSegmented(uint64_t N, uint64_t S);
+
+		//std::vector<SqFreeFactorization> SqFreeFactorizationSegmented(uint64_t N, uint64_t S);
 	};
 
 	extern SegmentedSieve sieve;

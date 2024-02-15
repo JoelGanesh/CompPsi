@@ -108,6 +108,7 @@ namespace Types
 
 		PrimeFactor(Prime p, Exponent exp);
 
+		operator uint64_t();
 		operator std::string();
 	};
 
@@ -137,5 +138,45 @@ namespace Types
 
 		operator std::string();
 	};
+
+	/*
+	// Structure to store the prime divisors of an integer.
+	struct SqFreeFactorization
+	{
+	protected:
+		std::vector<Prime> primes_;
+
+		// Product of the prime factors.
+		uint64_t n_;
+
+	public:
+		// Constructor
+		SqFreeFactorization() : n_(1), primes_() {};
+
+		const std::vector<Prime> Primes();
+		virtual uint64_t n();
+
+		virtual void AddFactor(Prime p);
+
+		virtual operator std::string();
+	};
+
+
+	struct PrimeFactorization : SqFreeFactorization
+	{
+	private:
+		std::vector<Exponent> multiplicities_;
+
+	public:
+		// Constructor
+		PrimeFactorization() : multiplicities_() {};
+
+		const std::vector<Exponent> Multiplicities();
+
+		void AddFactor(Prime p) override;
+		void AddFactor(Prime p, Exponent j, PrimePower q = 0);
+
+		operator std::string() override;
+	};*/
 }
 #endif // TYPES_H

@@ -14,7 +14,10 @@ namespace Elementary
     std::vector<Prime> SegmentedSieve::Primes(uint64_t N)
     {
         uint64_t M = this->N;
-        //if (N <= M) // If N is less than M, we have already stored all the necessary primes.
+
+        // If N is less than M, we have already stored all the necessary primes.
+        // If N is not much smaller than M, it might be benificial to just return all primes.
+        //if (N <= M / 2)
         //{
         //    // We return the subvector of primes consisting of all primes not larger than N.
         //    uint64_t max_index = Utility::Generic::FindIndex(primes, N);
@@ -22,7 +25,6 @@ namespace Elementary
         //}
         if (M < N)
         {
-
             std::vector<bool> prime = std::vector<bool>(N - M, true); // Represents integers M+1, ..., N.
 
             // First remove the multiples of primes we already know of.
@@ -35,7 +37,7 @@ namespace Elementary
             }
 
             // We proceed by using the idea behind the sieve of Eratosthenes to find the remaining primes.
-            uint64_t K = (uint64_t)std::floor(std::sqrt(N));
+            uint64_t K = std::sqrt(N);
             for (uint64_t n = M + 1; n <= K; n++)
             {
                 // If n is prime, mark proper multiples of n to be composite.
@@ -53,8 +55,6 @@ namespace Elementary
             // The remaining indices correspond to the primes.
             std::vector<Prime> newPrimes = Utility::Generic::IndexAll(prime, true, M + 1);
 
-            
-            
             // We append the new primes to the existing list of primes.
             primes.insert(primes.end(), newPrimes.begin(), newPrimes.end());
             this->N = N;
@@ -64,7 +64,7 @@ namespace Elementary
 
     std::vector<Prime> SegmentedSieve::PrimesSegmented(uint64_t N, uint64_t S)
     {
-        const uint32_t M(std::sqrt(N + S));
+        const uint64_t M(std::sqrt(N + S));
         Primes(M);
 
         std::vector<bool> prime = std::vector<bool>(S, true); // Represents integers N, ..., N+S-1.
@@ -90,7 +90,7 @@ namespace Elementary
 
     std::vector<int> SegmentedSieve::MuSegmented(uint64_t N, uint64_t S)
     {
-        const uint32_t M(std::sqrt(N + S));
+        const uint64_t M(std::sqrt(N + S));
         Primes(M);
 
         std::vector<int> mu = std::vector<int>(S, 1); // Represents mu values of N, ..., N+S-1.
