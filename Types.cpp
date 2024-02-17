@@ -8,8 +8,9 @@
 
 namespace Types
 {
-	// Rectangle implementation.
-	Rectangle::Rectangle(uint64_t N, uint64_t M, uint64_t m0, uint64_t d0, uint64_t a, uint64_t b) : N(N), M(M), m0(m0), d0(d0), a(a), b(b)
+	// Assumes that x and y have the same parity for (x,y) = (m1, m2), (d1, d2).
+	Rectangle::Rectangle(uint64_t N, uint64_t M, uint64_t m1, uint64_t m2, uint64_t d1, uint64_t d2) :
+		N(N), M(M), m0((m1 + m2) / 2), d0((d1 + d2) / 2), a((m2 - m1) / 2), b((d2 - d1) / 2)
 	{
 		double c_y = -(double)N / (m0 * d0 * d0);
 		std::tuple<uint64_t, uint64_t, uint64_t, uint64_t>(a0, a0_inv, q, s) = Elementary::DiophAppr::ApprByRedFrac(c_y, 2 * b);

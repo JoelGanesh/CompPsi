@@ -21,7 +21,7 @@
     <ClCompile Include="SegmentationArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PsiElem.cpp">
+    <ClCompile Include="PsiElemDVS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PsiFFT.cpp">
@@ -55,6 +55,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PsiElemIVS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

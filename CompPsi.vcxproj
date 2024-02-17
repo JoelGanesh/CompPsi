@@ -142,7 +142,8 @@
     <ClCompile Include="Interval.cpp" />
     <ClCompile Include="IO.cpp" />
     <ClCompile Include="PsiBF.cpp" />
-    <ClCompile Include="PsiElem.cpp" />
+    <ClCompile Include="PsiElemDVS.cpp" />
+    <ClCompile Include="PsiElemIVS.cpp" />
     <ClCompile Include="PsiFFT.cpp" />
     <ClCompile Include="PsiPrep.cpp" />
     <ClCompile Include="SegmentationArray.cpp" />

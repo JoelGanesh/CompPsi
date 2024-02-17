@@ -97,6 +97,11 @@ namespace Types
 
 		// Retrieve approximate value.
 		float_dec_100 numerical() const;
+
+		operator float_dec_100()
+		{
+			return numerical();
+		}
 	};
 
 	// Structure to store a pair of a prime and an exponent.
