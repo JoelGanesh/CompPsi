@@ -234,6 +234,55 @@ namespace CompPsi
 			- SumInter(G, 0, I[0], b, q) - SumInter(G, 0, JC1, b, q) - SumInter(G, 0, JC2, b, q);
 	}
 
+	float_dec_100 Special0A(std::vector<float_dec_100> G, uint64_t q, int64_t a, int64_t a_inv,
+							int64_t r0, int64_t b, double Q, int s_beta, int s_delta)
+	{
+		Interval I;
+		if (0 < r0 < q)
+		{
+			if (s_delta > 0)
+			{
+				I = Interval(-std::floor(Q), LLONG_MAX);
+			}
+			else if (s_delta < 0)
+			{
+				I = Interval(LLONG_MIN, -std::ceil(Q));
+			}
+			else if (s_beta >= 0)
+			{
+				I = Interval(LLONG_MIN, LLONG_MAX);
+			}
+		}
+		else
+		{
+			if (s_beta < 0)
+			{
+				if (s_delta < 0)
+				{
+					return SumInter(G, -r0 * a_inv, Interval(LLONG_MIN, -std::ceil(Q)), b, q)
+						 - SumInter(G, -r0 * a_inv, Interval(1, LLONG_MAX), b, q);
+				}
+				else if (s_delta > 0)
+				{
+					return SumInter(G, -r0 * a_inv, Interval(LLONG_MIN, -1), b, q)
+						- SumInter(G, -r0 * a_inv, Interval(-std::floor(Q), LLONG_MAX), b, q);
+				}
+			}
+			else if (s_beta < 0)
+			{
+				if (s_delta > 0)
+				{
+					I = Interval(-std::floor(Q), -1);
+				}
+				else if (s_delta < 0)
+				{
+					I = Interval(1, -std::ceil(Q));
+				}
+			}
+		}
+		return SumInter(G, -r0 * a_inv, I, b, q);
+	}
+	
 	// Returns sum_{(d,m) in [d0 - a, d0 + a) x [m0 - b, m0 + b)} f(d)g(m) (floor(alpha0 + alpha1 d) + floor(alpha2 m))
 	// by separation of variables.
 	template <typename T1, typename T2>
