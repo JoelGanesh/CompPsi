@@ -163,6 +163,77 @@ namespace CompPsi
 		return S;
 	}
 
+	float_dec_100 Special1(std::vector<float_dec_100> G, uint64_t N, uint64_t q, int64_t a, int64_t a_inv,
+						   double R0, int64_t r0, int64_t n0, int64_t m, int64_t b)
+	{
+		int64_t gamma1 = m * (-std::floor(R0) * q - (r0 + 1) + a * n0);
+		int64_t r = a_inv * (-1 - r0);
+		Interval I(-a * m, gamma1, N * q); I.Shift(-n0);
+
+		return SumInter(G, r, Interval(LLONG_MIN, LLONG_MAX), b, q) - SumInter(G, r, I, b, q);
+	}
+
+	float_dec_100 Special0B(std::vector<float_dec_100> G, uint64_t N, uint64_t q, int64_t a, int64_t a_inv,
+						   double R0, int64_t r0, int64_t n0, int64_t m, int64_t b, double Q, int s_beta, int s_delta)
+	{
+		int64_t gamma1 = m * (-std::floor(R0) * q - r0 + a * n0);
+		Interval I(-a * m, gamma1, N * q); I.Shift(-n0);
+		Interval J;
+		if (s_delta > 0)
+		{
+			J = Interval(LLONG_MIN, -std::floor(Q) - 1);
+		}
+		else if (s_delta < 0)
+		{
+			J = Interval(-std::floor(Q) + 1, LLONG_MAX);
+		}
+		else if (s_beta < 0)
+		{
+			J = Interval(LLONG_MIN, LLONG_MAX);
+		}
+		I.Intersect(J);
+		return SumInter(G, -r0 * a_inv, J, b, q) - SumInter(G, -r0 * a_inv, I, b, q);
+	}
+
+	float_dec_100 Special00(std::vector<float_dec_100> G, uint64_t N, uint64_t q, int64_t a, int64_t a_inv,
+							double R0, int64_t r0, int64_t n0, int64_t m, int64_t b, double Q, int s_delta)
+	{
+		Interval J;
+		if (s_delta > 0)
+		{
+			J = Interval(LLONG_MIN, -std::floor(Q) - 1);
+		}
+		else if (s_delta < 0)
+		{
+			J = Interval(-std::floor(Q) + 1, LLONG_MAX);
+		}
+
+		std::vector<Interval> I(2);
+		for (int j = 0; j <= 1; j++)
+		{
+			if (a != 0)
+			{
+				int64_t gamma1 = m * (-std::floor(R0) - (r0 + j) + a * n0);
+				I[j] = Interval(-a * m, gamma1, N); I[j].Shift(-n0);
+			}
+			else
+			{
+				I[j] = Interval(LLONG_MIN, N / (m * (std::floor(R0) + r0 + j) - n0));
+			}
+		}
+
+		I[0].Intersect(J);
+
+		// We now consider the complement of J.
+		// As this consists of two intervals, we have to split the computation.
+		Interval JC1(LLONG_MIN, J.start - 1), JC2(J.end + 1, LLONG_MAX);
+
+		JC1.Intersect(I[1]);
+		JC2.Intersect(I[1]);
+		return SumInter(G, 0, Interval(LLONG_MIN, LLONG_MAX), b, q) 
+			- SumInter(G, 0, I[0], b, q) - SumInter(G, 0, JC1, b, q) - SumInter(G, 0, JC2, b, q);
+	}
+
 	// Returns sum_{(d,m) in [d0 - a, d0 + a) x [m0 - b, m0 + b)} f(d)g(m) (floor(alpha0 + alpha1 d) + floor(alpha2 m))
 	// by separation of variables.
 	template <typename T1, typename T2>
@@ -183,7 +254,7 @@ namespace CompPsi
 	}
 
 	template <typename T>
-	float_dec_100 PsiElem::RaySum(std::vector<T> g, uint64_t q, uint64_t b, double delta)
+	float_dec_100 RaySum(std::vector<T> g, uint64_t q, uint64_t b, double delta)
 	{
 		float_dec_100 S(0);
 		if (delta < 0)
@@ -204,7 +275,7 @@ namespace CompPsi
 
 	template <typename T>
 	std::tuple<std::vector<float_dec_100>, std::vector<float_dec_100>, std::vector<float_dec_100>>
-		PsiElem::SumTable(std::vector<T> g, uint64_t q, uint64_t b, uint64_t a0)
+		SumTable(std::vector<T> g, uint64_t q, uint64_t b, uint64_t a0)
 	{
 		std::vector<float_dec_100> G(2 * b), rho(q), sigma(q + 1);
 		for (uint64_t n = 0; n < q; n++)
@@ -221,10 +292,15 @@ namespace CompPsi
 		for (uint64_t n = 0; n < q; n++)
 		{
 			rho[r] = G[b + n];
-			r += a; r %= q;
+			r += a;
+			if (r >= q)
+			{
+				r -= q;
+			}
 		}
 
-		sigma[0] = 0; sigma[1] = 0;
+		sigma[0] = 0;
+		sigma[1] = 0;
 		for (uint64_t r = 1; r < q; r++)
 		{
 			sigma[r + 1] = sigma[r] + rho[q - r];
@@ -232,7 +308,37 @@ namespace CompPsi
 		return std::make_tuple(G, rho, sigma);
 	}
 
-	uint64_t PsiElem::Mod(int64_t a, uint64_t q)
+	// Returns the sum of g(n) over n in I with n = r mod q.
+	// G represents the 'q' partial sums of g, restricted to the congruence classes modulo q.
+	// Algorithm by Helfgott & Thompson, 2023.
+	float_dec_100 SumInter(std::vector<float_dec_100> G, int64_t r, Interval I, int64_t b, int64_t q)
+	{
+		int64_t I0 = I.start, I1 = I.end;
+		if (I0 <= I1)
+		{
+			int64_t r0 = FlCong(I0 - 1, r, q),
+					r1 = FlCong(std::min(I1, b - 1), r, q);
+			if (r0 > r1 || r1 < -b)
+			{
+				return 0;
+			}
+			else if (r0 < -b)
+			{
+				return G[r1 + b];
+			}
+			return G[r1 + b] - G[r0 + b];
+		}
+		return 0;
+	}
+
+	// Returns largest integer <= n congruent to a mod q.
+	// Algorithm by Helfgott & Thompson, 2023.
+	int64_t FlCong(uint64_t n, uint64_t a, uint64_t q)
+	{
+		return n - Mod(n - a, q);
+	}
+
+	uint64_t Mod(int64_t a, uint64_t q)
 	{
 		// If a < 0, a % q returns the representative of a in {-q+1, -q+2, ..., 0}.
 		if (a >= 0)
@@ -245,7 +351,8 @@ namespace CompPsi
 		}
 	}
 
-	int PsiElem::Sgn(double delta)
+	// Returns the sign of a real number.
+	int Sgn(double delta)
 	{
 		if (delta < 0)
 		{
