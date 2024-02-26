@@ -13,9 +13,9 @@ namespace CompPsi
     float_dec_100 PsiFFT::Psi0(uint64_t N)
     {
         Elementary::SegmentationArray<float_dec_100> segmentationArray(N);
-        const int S = N * (pow(8, 1.0 / std::sqrt(N)) - 1);
+        const int S = N * (pow(2, 3 * segmentationArray.getDelta()) - 1);
         float_dec_100 result = SegmentationFFT(N, segmentationArray) - SegmentationError(N, S, segmentationArray); // mu[z] defined -> mu.size() = z+1.
-        std::cout << "Psi0: " << result << std::endl;
+        //std::cout << "Psi0: " << result << std::endl;
         return result;
     }
 
@@ -25,15 +25,15 @@ namespace CompPsi
         std::vector<float_dec_100> segmentedOne = segmArray.One();
         std::vector<float_dec_100> segmentedLambda = segmArray.Lambda_M();
         std::vector<std::vector<float_dec_100>> segments{ segmentedMu, segmentedOne, segmentedLambda };
-        for (int i = 0; i < 3; i++)
-        {
-            Utility::IO::Print(segments[i]);
-        }
+        //for (int i = 0; i < 3; i++)
+        //{
+        //    Utility::IO::Print(segments[i]);
+        //}
 
         uint64_t size = segmentedMu.size(); // Note: sizes of the segments are equal.
         Fourier::FFTSimple FFTLib(size, 3); // The parameter 3 represents the number of arrays to be convoluted.
         std::vector<float_dec_100> segmentation = FFTLib.Convolve(segments);
-        Utility::IO::Print(segmentation);
+        //Utility::IO::Print(segmentation);
         //cout << "S: ";
         //Print(segmentation);
         float_dec_100 sum = 0;
@@ -42,7 +42,7 @@ namespace CompPsi
             sum += segmentation[k];
         }
 
-        std::cout << "PsiFFTSegmentation: " << sum << std::endl;
+        //std::cout << "PsiFFTSegmentation: " << sum << std::endl;
         return sum;
     }
 
@@ -61,7 +61,7 @@ namespace CompPsi
         for (size_t n = N + 1; n <= N + S; n++)
         {
             Factorization factorization = factorizations[n - (N + 1)];
-            std::cout << std::string(factorization) << std::endl;
+            //std::cout << std::string(factorization) << std::endl;
 
             Tuple v{ 1, INT_MAX, INT_MAX }; // First entry corresponds with mu. We take ones for mu_z since mu_z(n) = 0 whenever p^2 divides n for some prime p.
             std::vector<Tuples> subfactorizations = PsiFFT::SubFactorizations(v, factorization);
@@ -133,7 +133,7 @@ namespace CompPsi
             }
         }
 
-        std::cout << "PsiFFTError: " << error << std::endl;
+        //std::cout << "PsiFFTError: " << error << std::endl;
         return error;
     }
     

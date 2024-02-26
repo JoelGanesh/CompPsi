@@ -40,7 +40,7 @@ namespace Elementary
 	public:
 		// Constructor; sets up the (constant) segmentation arrays.
 		SegmentationArray(uint64_t N) :
-			delta_inv(std::sqrt(N)), delta(1.0 / std::sqrt(N)), N(N), M(std::sqrt(N))
+			delta_inv(std::sqrt(N) / 8.0), delta(8.0 / std::sqrt(N)), N(N), M(std::sqrt(N))
 		{
 		}
 
@@ -48,6 +48,11 @@ namespace Elementary
 		uint64_t index(uint64_t n) const
 		{
 			return (uint64_t)(std::log2(n) * delta_inv);
+		}
+
+		double getDelta() const
+		{
+			return delta;
 		}
 
 		// Returns segmentation array of 1.
