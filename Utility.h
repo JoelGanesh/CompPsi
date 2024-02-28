@@ -21,7 +21,7 @@ namespace Utility
 		static std::vector<Y> Map(std::vector<X> v, std::function<Y(X)> f)
 		{
 			std::vector<Y> res;
-			for (X x : v)
+			for (const X x : v)
 			{
 				res.push_back(f(x));
 			}
@@ -113,7 +113,7 @@ namespace Utility
 	{
 	public:
 		// Returns a tuple (p, p', q, s) of integers so that abs(alpha - p/q) <= 1/(qQ)
-		// with gcd(p, q) = 1, q <= Q, and pp' = 1 mod q, while s = sign(alpha - p/q).
+		// with gcd(p, q) = 1, q <= Q, and pp' = 1 mod q, while s = sgn(alpha - p/q).
 		// Algorithm taken from a published paper from 2023 by H. A. Helfgott and L. Thompson.
 		static std::tuple<int, int, int, int> ApprByRedFrac(double alpha, int Q);
 	};
@@ -121,10 +121,9 @@ namespace Utility
 	// Class helping with indexing certain objects.
 	class Indexation
 	{
-	public:
+		public:
 		// Generates all non-negative integer tuples (k_1, ..., k_d) such that k_i <= a_i,
 		// while k_1 + ... + k_d = n. Here 'd' represents the size of 'a'.
-		// Note: due to how 'a' is processed, it might be beneficial to order elements in 'a' from small to large. TODO: Figure out if this is the case.
 		static std::vector<std::vector<int>> RestrictedTuples(int n, std::vector<int> a);
 
 		// Converts integers to tuples with non-negative integer entries restricted by the array 'a'.
@@ -132,7 +131,7 @@ namespace Utility
 		// it is a bijection to {(n_1, ..., n_k) : 0 <= n_i < a_i for all i}.
 		static std::vector<int> IntToTuple(int n, std::vector<int> a);
 
-	private:
+		private:
 		// Recursive function computing tuples (k_j, ..., k_d) as in 'RestrictedTuples' above, where j = index + 1.
 		static std::vector<std::vector<int>> RestrictedTuples(int n, std::vector<int> a, uint64_t index);
 	};

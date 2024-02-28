@@ -7,11 +7,10 @@
 
 namespace CompPsi
 {
-	const int BRUTEFORCE_C = 4;
 	float_dec_100 PsiElem::Psi0(uint64_t N)
 	{
 		uint64_t M = std::sqrt(N);
-		uint64_t M0 = std::pow(N, 0.4) * std::pow(std::log(std::log(N)), 0.6) / std::pow(std::log(N), 0.6);
+		uint64_t M0 = std::max(1, (int)(std::pow(N, 0.4) * std::pow(std::log(std::log(N)), 0.6) / std::pow(std::log(N), 0.6)));
 		return DependentVar(N, M, M0) + IndependentVar(N, M0);
 	}
 

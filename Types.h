@@ -104,15 +104,10 @@ namespace Types
 		// if a > 0, we instead disregard them,
 		// according to the implementation by Helfgott & Thompson.
 		// Requires that a != 0.
-		Interval(int64_t a, int64_t b, int64_t c)
+		Interval(int64_t a, int64_t b, int64_t c) : start(1), end(0)
 		{
 			int64_t D = b * b - 4 * a * c;
-			if (D < 0)
-			{
-				start = 1;
-				end = 0;
-			}
-			else
+			if (D >= 0)
 			{
 				int64_t Q = std::sqrt(D);
 				if (a < 0)
@@ -136,7 +131,7 @@ namespace Types
 
 		// Intersects this interval with another one.
 		// Result is stored in this object.
-		Interval Intersect(Interval I)
+		void Intersect(Interval I)
 		{
 			start = std::max(start, I.start);
 			end = std::min(end, I.end);

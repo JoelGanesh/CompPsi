@@ -33,8 +33,9 @@ int main()
 		//std::function<std::string(float_dec_100)> f = [](float_dec_100 q) { return q.str(6); };
 		//Utility::IO::Print(Utility::Generic::Map(y, f));
 		
-		std::cout << std::setprecision(100) << psiFFT.Psi(n) << std::endl;
+		//std::cout << std::setprecision(100) << psiFFT.Psi(n) << std::endl;
 		std::cout << std::setprecision(100) << psiBF.Psi(n) << std::endl;
+		std::cout << std::setprecision(100) << psiElem.Psi(n) << std::endl;
 		//std::cout << CompPsi::PsiElem::Psi(n) << std::endl;
 	}
 }

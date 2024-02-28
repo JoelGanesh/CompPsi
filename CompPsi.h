@@ -29,15 +29,15 @@ namespace CompPsi
 	// of Psi(N) is based on an underlying implementation of Psi0,
 	// to be defined in subclasses of PsiPrep.
 	// Note: an implementation of Psi0 *must* be present in a derived class.
-	template <class T>
+	//template <class T>
 	class PsiPrep
 	{
 	public:
 		// Computes and returns an approximation of Psi(N).
-		static float_dec_100 Psi(uint64_t N)
+		float_dec_100 Psi(uint64_t N)
 		{
 			float_dec_100 result = PsiPreparation(N);
-			result -= T::Psi0(N); // An implementation of Psi0 should be present in T.
+			result -= Psi0(N); // An implementation of Psi0 should be present in T.
 			return result;
 		}
 
@@ -68,12 +68,12 @@ namespace CompPsi
 	};
 
 	// An elementary approach to compute Psi(N) efficiently.
-	class PsiElem : public PsiPrep<PsiElem>
+	class PsiElem : public PsiPrep//<PsiElem>
 	{
 	private:
 		// Computes Psi0(N) using elementary methods.
 		// Definition of Psi0 can be found in base class.
-		static float_dec_100 Psi0(uint64_t N);
+		float_dec_100 Psi0(uint64_t N) override;
 
 		// Computes sum_{mdk <= N, M0 < max(m,d) <= M} Lambda(m)mu(d).
 		static float_dec_100 DependentVar(uint64_t N, uint64_t M, uint64_t M0);
@@ -108,7 +108,7 @@ namespace CompPsi
 				// Compute the factorizations of [n, n+K)
 				// and use them to compute the terms of the sum.
 				std::vector<Factorization> F = Elementary::sieve.FactorizationSegmented(n, K);
-				for (uint64_t m = n; m < n + K; k++)
+				for (uint64_t m = n; m < n + K; m++)
 				{
 					sum += g(F[m - n], N / m);
 				}
@@ -120,21 +120,14 @@ namespace CompPsi
 		static float_dec_100 RestrictedDivSumLambda(Factorization& F, uint64_t a);
 
 		// Computes a restricted divisor sum of the form sum_{d|n, d <= a} mu(d).
+		// Algorithm by Helfgott & Thompson, 2023.
 		static uint64_t RestrictedDivSumMu(Factorization& F, uint64_t a);
 
-		// Helper function for RestrictedDivSumMu; implementation by Helfgott & Thompson (2023).
+		// Helper function for RestrictedDivSumMu; algorithm by Helfgott & Thompson, 2023.
 		static uint64_t RestrictedDSM_(Factorization& F, uint64_t index, uint64_t m1, uint64_t m2, uint64_t a, uint64_t n);
 
 		// Computes sum_{mdk <= N: m,d <= M0} Lambda(m)mu(d) = sum_{m,d <= M0} Lambda(m)mu(d)floor(N/md).
 		static float_dec_100 IndependentVar(uint64_t N, uint64_t M0);
-
-		// Computes sum_{m,d <= M0} Lambda(m)mu(d)floor(N/md) for (m,d) restricted to [A, 2A) x [B, 2B).
-		// The parameters a and b are determined by A and B, and are useful for future computations.
-		static float_dec_100 IndependentVar(uint64_t N, uint64_t M0, uint64_t A, uint64_t B, uint64_t a, uint64_t b);
-
-		// Computes sum_{m,d <= M0} Lambda(m)mu(d)floor(N/md),
-		// where pairs (m,d) are restricted to a fixed rectangle R.
-		static float_dec_100 IndependentVar(Rectangle R);
 
 		// Below we consider the local linear approximation for (m,d) around the center of a rectangle R, say (m0,d0): 
 		// N/md = N/m0d0 + c_x(m-m0) + c_y(d-d0) + O(max((m-m0)^2, (d-d0)^2).
@@ -143,26 +136,16 @@ namespace CompPsi
 		// Si = sum_{(m,d) in R} Lambda(m)mu(d)Li(m,d) for i = 0, 1, 2.
 		// The differences Li - Lj have been analyzed in Helfgott & Thompson (2023),
 		// allowing us to compute the sums Si efficiently.
-   
-		// Computes S0 - S1 for some fixed rectangle R.
-		static float_dec_100 IndependentVar_S0mS1(Rectangle R);
-
-		// Computes S1 - S2 for some fixed rectangle R.
-		static float_dec_100 IndependentVar_S1mS2(Rectangle R);
-
-		// Computes S2 for some fixed rectangle R.
-		static float_dec_100 IndependentVar_S2(Rectangle R);
 	};
 
 	// An FFT approach to compute Psi(N) efficiently.
-	class PsiFFT : public PsiPrep<PsiFFT>
+	class PsiFFT : public PsiPrep//<PsiFFT>
 	{
-	public:
+		private:
 		// Computes Psi0(N) using the Fast Fourier Transform.
 		// Definition of Psi0 can be found in base class.
-		static float_dec_100 Psi0(uint64_t N);
+		float_dec_100 Psi0(uint64_t N) override;
 
-	private:
 		// Applies FFT on segmentation arrays to get a rough approximation of Psi0(N).
 		static float_dec_100 SegmentationFFT(uint64_t N, Elementary::SegmentationArray<float_dec_100> array);
 
