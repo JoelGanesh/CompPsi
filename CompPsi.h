@@ -55,7 +55,7 @@ namespace CompPsi
 			PsiBF psiBF;
 			float_dec_100 result = psiBF.Psi(M);
 			std::vector<int> mu = Elementary::sieve.MuSegmented(1, M);
-			for (uint32_t d = 1; d <= M; d++)
+			for (uint64_t d = 1; d <= M; d++)
 			{
 				uint64_t temp = N / d;
 				float_dec_100 k(temp);

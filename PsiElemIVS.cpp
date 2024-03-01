@@ -27,7 +27,7 @@ namespace CompPsi
 	static uint64_t Mod(int64_t a, uint64_t q)
 	{
 		// If a < 0, a % q returns the representative of a in {-q+1, -q+2, ..., 0}.
-		if (a >= 0)
+		if (a >= 0 || a % q == 0)
 		{
 			return a % q;
 		}
@@ -220,7 +220,7 @@ namespace CompPsi
 			}
 			else
 			{
-				J[j] = Interval(LLONG_MIN, N / (d * ((int64_t)std::floor(R0) + r0 + j) - m0));
+				J[j] = Interval(LLONG_MIN, N / (d * ((int64_t)std::floor(R0) + r0 + j)) - m0);
 			}
 		}
 
@@ -306,7 +306,7 @@ namespace CompPsi
 		uint64_t a0_inv = std::get<1>(tuple);
 		uint64_t q = std::get<2>(tuple); 
 		int sgn_delta = std::get<3>(tuple);
-		double delta = alpha2 - a0 / q;
+		double delta = alpha2 - (double)a0 / q;
 
 		float_dec_100 Z = RaySum(g, q, b, m_index, sgn_delta);
 
@@ -324,7 +324,7 @@ namespace CompPsi
 				double R0_frac = R0 - std::floor(R0);
 				int64_t r0 = std::floor(R0_frac * q + 0.5);
 				int64_t d_ = d0 + d - a;
-				double beta = R0_frac - r0 / q;
+				double beta = R0_frac - (double)r0 / q;
 				int sgn_beta = Sgn(beta);
 
 				double Q(1);
@@ -415,7 +415,7 @@ namespace CompPsi
 					case LINEAR_APPR:
 						S += DoubleSum(d0, d1, m0, m1, a, b, Lambda, mu, N);
 
-						if (A1 != B1) // Non-diagonal case; consider region mirrored in diagonal.
+						if (A0 != B0 || A1 != B1) // Non-diagonal case; consider region mirrored in diagonal.
 						{
 							Lambda = Elementary::sieve.LambdaSegmented(m0, D);
 							mu = Elementary::sieve.MuSegmented(d0, D);
@@ -442,7 +442,7 @@ namespace CompPsi
 	{
 		float_dec_100 S(0);
 		uint64_t A1 = M0 + 1, B1 = M0 + 1;
-		int C = 10, D = 8; // Hand-tuned by Helfgott & Thompson, 2023.
+		uint64_t C = 1, D = 2; // Hand-tuned by Helfgott & Thompson, 2023. TODO: Change back to C = 10, D = 8.
 
 		while (A1 >= 2 * std::pow(6 * C * C * C * N, 0.25) &&
 			   A1 >= std::sqrt(M0) + 1 &&
@@ -473,6 +473,8 @@ namespace CompPsi
 
 		// The remaining rectangle is done again by brute force.
 		S += DDSum(1, A1, 1, B1, N, std::sqrt(M0) + 1, BRUTE_FORCE, 0, 0);
+
+		std::cout << "IV: " << S << std::endl;
 		return S;
 	}
 }

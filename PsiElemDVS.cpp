@@ -10,7 +10,7 @@ namespace CompPsi
 	float_dec_100 PsiElem::Psi0(uint64_t N)
 	{
 		uint64_t M = std::sqrt(N);
-		uint64_t M0 = std::max(1, (int)(std::pow(N, 0.4) * std::pow(std::log(std::log(N)), 0.6) / std::pow(std::log(N), 0.6)));
+		uint64_t M0 = std::max(1, (int)(std::pow(N, 0.4) * std::pow(std::log(std::log(N)) / std::log(N), 0.6)));
 		return DependentVar(N, M, M0) + IndependentVar(N, M0);
 	}
 
@@ -33,7 +33,7 @@ namespace CompPsi
 		uint64_t t = N / M + 1;
 		float_dec_100 sum_DLambda = boost::multiprecision::lgamma(float_dec_100(t));
 		float_dec_100 sum_LambdaFl(0);
-		uint64_t sum_Dmu(1), sum_muFl(0);
+		int64_t sum_Dmu(1), sum_muFl(0);
 		uint64_t DLambda_index(N / M), Dmu_index(N / M);
 		for (uint64_t n = M; n > M0; n -= K1)
 		{
@@ -77,6 +77,7 @@ namespace CompPsi
 				}
 			}
 		}
+		std::cout << "DV: " << sum << std::endl;
 		return sum;
 	}
 
