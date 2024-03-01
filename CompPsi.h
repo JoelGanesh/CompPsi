@@ -124,7 +124,7 @@ namespace CompPsi
 		static uint64_t RestrictedDivSumMu(Factorization& F, uint64_t a);
 
 		// Helper function for RestrictedDivSumMu; algorithm by Helfgott & Thompson, 2023.
-		static uint64_t RestrictedDSM_(Factorization& F, uint64_t index, uint64_t m1, uint64_t m2, uint64_t a, uint64_t n);
+		static uint64_t RestrictedDSM_(Factorization& F, int64_t index, uint64_t m1, uint64_t m2, uint64_t a, uint64_t n);
 
 		// Computes sum_{mdk <= N: m,d <= M0} Lambda(m)mu(d) = sum_{m,d <= M0} Lambda(m)mu(d)floor(N/md).
 		static float_dec_100 IndependentVar(uint64_t N, uint64_t M0);

@@ -30,11 +30,10 @@ namespace CompPsi
 		// We process 'd' and 'm' in reverse order, 
 		// so that the partial sums of inner sums do not have to be stored individually.
 
-		uint64_t t = N / M + 1;
-		float_dec_100 sum_DLambda = boost::multiprecision::lgamma(float_dec_100(t));
+		float_dec_100 sum_DLambda = boost::multiprecision::lgamma(float_dec_100(M + 1));
 		float_dec_100 sum_LambdaFl(0);
 		int64_t sum_Dmu(1), sum_muFl(0);
-		uint64_t DLambda_index(N / M), Dmu_index(N / M);
+		uint64_t DLambda_index(M), Dmu_index(M);
 		for (uint64_t n = M; n > M0; n -= K1)
 		{
 			K1 = std::min(K1, n - M0);
@@ -49,13 +48,14 @@ namespace CompPsi
 					// Process (n - K1, n] by considering d = n - i, i = 0, 1, ..., K1 - 1.
 					uint64_t d = n - i;
 
-					sum_LambdaFl += Lambda[K1 - i - 1].numerical() * std::floor(N / (d * d));
 					if (mu[K1 - i - 1] != 0)
 					{
 						sum_DLambda += SegmentSumDivSumLambda(DLambda_index, N / d, N, K2);
+						//std::cout << "sum_DLambda = " << sum_DLambda << std::endl;
 						DLambda_index = N / d;
 						sum += mu[K1 - i - 1] * (sum_DLambda - sum_LambdaFl);
 					}
+					sum_LambdaFl += Lambda[K1 - i - 1].numerical() * (N / (d * d));
 				}
 			}
 			{
@@ -66,10 +66,11 @@ namespace CompPsi
 					// Process (n - K1, n] by considering m = n - i, i = 0, 1, ..., K1 - 1.
 					uint64_t m = n - i;
 
-					sum_muFl += mu[K1 - i - 1] * std::floor(N / (m * m));
-					if (Lambda[K1 - i - 1].n != 0)
+					sum_muFl += mu[K1 - i - 1] * (N / (m * m));
+					if (Lambda[K1 - i - 1].n > 1)
 					{
 						sum_Dmu += SegmentSumDivSumMu(Dmu_index, N / m, N, K2);
+						//std::cout << "sum_Dmu = " << sum_Dmu << std::endl;
 						Dmu_index = N / m;
 
 						sum += Lambda[K1 - i - 1].numerical() * (sum_Dmu - sum_muFl);
@@ -92,7 +93,7 @@ namespace CompPsi
 	}
 
 	// The primefactors in F are sorted from small to large, so we can proceed by keeping track of the index.
-	uint64_t PsiElem::RestrictedDSM_(Factorization& F, uint64_t index, uint64_t m1, uint64_t m2, uint64_t a, uint64_t n)
+	uint64_t PsiElem::RestrictedDSM_(Factorization& F, int64_t index, uint64_t m1, uint64_t m2, uint64_t a, uint64_t n)
 	{
 		if (m1 > a)
 		{
