@@ -4,17 +4,17 @@
 
 namespace Elementary
 {
-	std::tuple<uint64_t, uint64_t, uint64_t, int> DiophAppr::ApprByRedFrac(double alpha, uint64_t Q)
+	std::tuple<int64_t, int64_t, int64_t, int> DiophAppr::ApprByRedFrac(double alpha, int64_t Q)
 	{
-		uint64_t p[2]{ 0, 1 };
-		uint64_t q[2]{ 1, 0 };
+		int64_t p[2]{ 0, 1 };
+		int64_t q[2]{ 1, 0 };
 		int s = 1;
 
 		while (q[1] <= Q)
 		{
-			uint64_t a(alpha); // a = floor(alpha).
-			uint64_t new_p = a * p[1] + p[0];
-			uint64_t new_q = a * q[1] + q[0];
+			int64_t a(alpha); // a = floor(alpha).
+			int64_t new_p = a * p[1] + p[0];
+			int64_t new_q = a * q[1] + q[0];
 			if (alpha - a < epsilon)
 			{
 				return std::make_tuple(new_p, (s * q[0]) % new_q, new_q, 0);

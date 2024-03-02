@@ -5,8 +5,10 @@
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
-#define LINEAR_APPR 0
-#define BRUTE_FORCE 1
+#define LINEAR_APPR_DIAG 0
+#define LINEAR_APPR_NONDIAG 1
+#define BRUTE_FORCE_DIAG 2
+#define BRUTE_FORCE_NONDIAG 3
 
 namespace CompPsi
 {
@@ -24,7 +26,7 @@ namespace CompPsi
 		return 0;
 	}
 
-	static uint64_t Mod(int64_t a, uint64_t q)
+	static int64_t Mod(int64_t a, int64_t q)
 	{
 		// If a < 0, a % q returns the representative of a in {-q+1, -q+2, ..., 0}.
 		if (a >= 0 || a % q == 0)
@@ -36,7 +38,7 @@ namespace CompPsi
 
 	// Returns largest integer <= n congruent to a mod q.
 	// Algorithm by Helfgott & Thompson, 2023.
-	static int64_t FlCong(uint64_t n, uint64_t a, uint64_t q)
+	static int64_t FlCong(int64_t n, int64_t a, int64_t q)
 	{
 		return n - Mod(n - a, q);
 	}
@@ -72,7 +74,7 @@ namespace CompPsi
 	// Algorithm by Helfgott & Thompson, 2023.
 	template <typename T>
 	static std::tuple<std::vector<float_dec_100>, std::vector<float_dec_100>, std::vector<float_dec_100>>
-		SumTable(std::vector<T> g, uint64_t q, uint64_t b, uint64_t m_index, uint64_t a0)
+		SumTable(std::vector<T> g, int64_t q, int64_t b, int64_t m_index, int64_t a0)
 	{
 		std::vector<float_dec_100> G(2 * b), rho(q), sigma(q + 1, 0);
 		for (uint64_t m = 0; m < q; m++)
@@ -83,10 +85,10 @@ namespace CompPsi
 		{
 			G[m] = G[m - q] + float_dec_100(g[m_index + m]);
 		}
-		uint64_t r = Mod(a0 * (b - q), q);
-		uint64_t a = Mod(a0, q);
+		int64_t r = Mod(a0 * (b - q), q);
+		int64_t a = Mod(a0, q);
 
-		for (uint64_t m = b - q; m < b; m++)
+		for (int64_t m = b - q; m < b; m++)
 		{
 			rho[r] = G[m];
 			r += a;
@@ -96,7 +98,7 @@ namespace CompPsi
 			}
 		}
 
-		for (uint64_t r = 1; r < q; r++)
+		for (int64_t r = 1; r < q; r++)
 		{
 			sigma[r + 1] = sigma[r] + rho[q - r];
 		}
@@ -107,7 +109,7 @@ namespace CompPsi
 	// It is assumed that T can be cast to float_dec_100.
 	// Algorithm by Helfgott & Thompson, 2023.
 	template <typename T>
-	static float_dec_100 RaySum(std::vector<T> g, uint64_t q, uint64_t b, uint64_t m_index, int s)
+	static float_dec_100 RaySum(std::vector<T> g, int64_t q, int64_t b, int64_t m_index, int s)
 	{
 		float_dec_100 S(0);
 		if (s < 0)
@@ -133,7 +135,7 @@ namespace CompPsi
 	// Algorithm by Helfgott & Thompson, 2023.
 	template <typename T1, typename T2>
 	static float_dec_100 LinearSum(std::vector<T1> f, std::vector<T2> g,
-								   uint64_t a, uint64_t b, uint64_t d_index, uint64_t m_index,
+								   int64_t a, int64_t b, int64_t d_index, int64_t m_index,
 								   double alpha0, double alpha1, double alpha2)
 	{
 		float_dec_100 S_f0(0), S_f1(0), S_g0(0), S_g1(0);
@@ -151,7 +153,7 @@ namespace CompPsi
 	}
 
 	// Computation of L - L1 for the special case where a0(m-m0) + r0 = -1 mod q, assuming q > 1.
-	static float_dec_100 Special1(std::vector<float_dec_100> G, uint64_t N, uint64_t q, int64_t a, int64_t a_inv,
+	static float_dec_100 Special1(std::vector<float_dec_100> G, int64_t N, int64_t q, int64_t a, int64_t a_inv,
 								  double R0, int64_t r0, int64_t m0, int64_t d, int64_t b)
 	{
 		// Note that a0m + r0 = -1 mod q iff m = r mod q, with r = (-1 - r0) * a_inv.
@@ -167,7 +169,7 @@ namespace CompPsi
 
 	// Computing L - L1 for a0(m-m0) + r0 = 0 mod q, with q > 1.
 	// Algorithm by Helfgott & Thompson, 2023. Some comments are added for clarity.
-	static float_dec_100 Special0B(std::vector<float_dec_100> G, uint64_t N, uint64_t q, int64_t a, int64_t a_inv,
+	static float_dec_100 Special0B(std::vector<float_dec_100> G, int64_t N, int64_t q, int64_t a, int64_t a_inv,
 								   double R0, int64_t r0, int64_t m0, int64_t d, int64_t b, double Q, int s_beta, int s_delta)
 	{
 		Interval I;
@@ -195,7 +197,7 @@ namespace CompPsi
 
 	// Computation of L - L1 for the special case where q = 1.
 	// Algorithm by Helfgott & Thompson, 2023. Some comments are added for clarity.
-	static float_dec_100 Special00(std::vector<float_dec_100> G, uint64_t N, uint64_t q, int64_t a, int64_t a_inv,
+	static float_dec_100 Special00(std::vector<float_dec_100> G, int64_t N, int64_t q, int64_t a, int64_t a_inv,
 								   double R0, int64_t r0, int64_t m0, int64_t d, int64_t b, double Q, int s_delta)
 	{
 		Interval I, I_c;
@@ -235,7 +237,7 @@ namespace CompPsi
 
 	// Computation of L1 - L2 for the special case where a0(m-m0) + r0 = 0 mod q.
 	// Algorithm by Helfgott & Thompson, 2023. Some comments are added for clarity.
-	static float_dec_100 Special0A(std::vector<float_dec_100> G, uint64_t q, int64_t a, int64_t a_inv,
+	static float_dec_100 Special0A(std::vector<float_dec_100> G, int64_t q, int64_t a, int64_t a_inv,
 								   int64_t r0, int64_t b, double Q, int s_beta, int s_delta)
 	{
 		// Note that am + r0 = 0 mod q iff m = r mod q with r = -r0 * a_inv. 
@@ -295,16 +297,16 @@ namespace CompPsi
 	// It is assumed that a and b are such that the error in
 	// the linear approximation of N/xy is less than 1/2b.
 	template <typename T1, typename T2>
-	static float_dec_100 SumByLinAppr(std::vector<T1> f, std::vector<T2> g, uint64_t N, uint64_t d0, uint64_t m0,
-									  uint64_t a, uint64_t b, uint64_t d_index, uint64_t m_index)
+	static float_dec_100 SumByLinAppr(std::vector<T1> f, std::vector<T2> g, int64_t N, int64_t d0, int64_t m0,
+									  int64_t a, int64_t b, int64_t d_index, int64_t m_index)
 	{
 		double alpha0 = (double)N / (d0 * m0), alpha1 = -(double)N / (d0 * d0 * m0), alpha2 = -(double)N / (d0 * m0 * m0);
 
 		float_dec_100 S = LinearSum(f, g, a, b, d_index, m_index, alpha0, alpha1, alpha2);
-		std::tuple<uint64_t, uint64_t, uint64_t, int> tuple = Elementary::DiophAppr::ApprByRedFrac(alpha2, 2 * b);
-		uint64_t a0 = std::get<0>(tuple);
-		uint64_t a0_inv = std::get<1>(tuple);
-		uint64_t q = std::get<2>(tuple); 
+		std::tuple<int64_t, int64_t, int64_t, int> tuple = Elementary::DiophAppr::ApprByRedFrac(alpha2, 2 * b);
+		int64_t a0 = std::get<0>(tuple);
+		int64_t a0_inv = std::get<1>(tuple);
+		int64_t q = std::get<2>(tuple); 
 		int sgn_delta = std::get<3>(tuple);
 		double delta = alpha2 - (double)a0 / q;
 
@@ -360,17 +362,19 @@ namespace CompPsi
 
 	// Computes the sum of f(d)g(m)floor(N/dm) over the rectangle [d0, d1) x [m0, m1) by brute force.
 	// It is assumed that T1 and T2 can be cast to the type float_dec_100.
-	template <typename T1, typename T2>
-	static float_dec_100 BruteDoubleSum(uint64_t d0, uint64_t d1, uint64_t m0, uint64_t m1,
-										std::vector<T1> f, std::vector<T2> g, uint64_t N)
+	static float_dec_100 BruteDoubleSum(int64_t d0, int64_t d1, int64_t m0, int64_t m1,
+										std::vector<Log> f, std::vector<int> g, int64_t N)
 	{
 		float_dec_100 S(0);
-		for (uint64_t d = d0; d < d1; d++)
+		for (int64_t d = d0; d < d1; d++)
 		{
-			for (uint64_t m = m0; m < m1; m++)
+			int64_t T(0);
+			for (int64_t m = m0; m < m1; m++)
 			{
-				S += float_dec_100(f[d - d0]) * float_dec_100(g[m - m0]) * (N / (d * m));
+				int64_t k = N / (d * m);
+				T += k * g[m - m0];
 			}
+			S += T * f[d - d0].numerical();
 		}
 		return S;
 	}
@@ -378,59 +382,55 @@ namespace CompPsi
 	// Computes the sum of f(d)g(m)floor(N/dm) over the rectangle [d0, d1) x [m0, m1) by
 	// linear approximation of the term floor(N/dm) on small rectangles of fixed size a * b.
 	template <typename T1, typename T2>
-	static float_dec_100 DoubleSum(uint64_t d0, uint64_t d1, uint64_t m0, uint64_t m1, uint64_t a, uint64_t b,
-								   std::vector<T1> f, std::vector<T2> g, uint64_t N)
+	static float_dec_100 DoubleSum(int64_t d0, int64_t d1, int64_t m0, int64_t m1, int64_t a, int64_t b,
+								   std::vector<T1> f, std::vector<T2> g, int64_t N)
 	{
 		float_dec_100 S(0);
-		for (uint64_t mm = m0; mm < m1; mm += 2 * a)
+		for (int64_t mm = m0; mm < m1; mm += 2 * a)
 		{
-			uint64_t mp = std::min(mm + 2 * a, m1);
-			uint64_t m_mid = (mm + mp) / 2, m_len = (mp - mm) / 2;
-			uint64_t m_index = mm - m0;
-			for (uint64_t dm = d0; dm < d1; dm += 2 * b)
+			int64_t mp = std::min(mm + 2 * a, m1);
+			int64_t m_mid = (mm + mp) / 2, m_len = (mp - mm) / 2;
+			int64_t m_index = mm - m0;
+			for (int64_t dm = d0; dm < d1; dm += 2 * b)
 			{
-				uint64_t dp = std::min(dm + 2 * a, d1);
-				uint64_t d_mid = (dm + dp) / 2, d_len = (dp - dm) / 2;
-				uint64_t d_index = dm - d0;
+				int64_t dp = std::min(dm + 2 * a, d1);
+				int64_t d_mid = (dm + dp) / 2, d_len = (dp - dm) / 2;
+				int64_t d_index = dm - d0;
 				S += SumByLinAppr(f, g, N, d_mid, m_mid, d_len, m_len, d_index, m_index);
 			}
 		}
 		return S;
 	}
 
-	float_dec_100 DDSum(uint64_t A0, uint64_t A1, uint64_t B0, uint64_t B1,
-						uint64_t N, uint64_t D, int mode, uint64_t a, uint64_t b)
+	float_dec_100 DDSum(int64_t A0, int64_t A1, int64_t B0, int64_t B1,
+						int64_t N, int64_t D, int mode, int64_t a, int64_t b)
 	{
 		float_dec_100 S(0);
-		for (uint64_t d0 = A0; d0 < A1; d0 += D)
+		for (int64_t d0 = A0; d0 < A1; d0 += D)
 		{
-			uint64_t d1 = std::min(d0 + D, A1);
-			std::vector<Log> Lambda = Elementary::sieve.LambdaSegmented(d0, D);
-			for (uint64_t m0 = B0; m0 < B1; m0 += D)
+			int64_t d1 = std::min(d0 + D, A1);
+			std::vector<int> mu_d = Elementary::sieve.MuSegmented(d0, d1 - d0);
+			std::vector<Log> Lambda_d = Elementary::sieve.LambdaSegmented(d0, d1 - d0);
+			for (int64_t m0 = B0; m0 < B1; m0 += D)
 			{
-				uint64_t m1 = std::min(m0 + D, B1);
-				std::vector<int> mu = Elementary::sieve.MuSegmented(m0, D);
+				int64_t m1 = std::min(m0 + D, B1);
+				std::vector<int> mu_m = Elementary::sieve.MuSegmented(m0, m1 - m0);
+				std::vector<Log> Lambda_m = Elementary::sieve.LambdaSegmented(m0, m1 - m0);
 				switch (mode)
 				{
-					case LINEAR_APPR:
-						S += DoubleSum(d0, d1, m0, m1, a, b, Lambda, mu, N);
-
-						if (A0 != B0 || A1 != B1) // Non-diagonal case; consider region mirrored in diagonal.
-						{
-							Lambda = Elementary::sieve.LambdaSegmented(m0, D);
-							mu = Elementary::sieve.MuSegmented(d0, D);
-							S += DoubleSum(d0, d1, m0, m1, a, b, mu, Lambda, N);
-						}
+					case LINEAR_APPR_DIAG:
+						S += DoubleSum(d0, d1, m0, m1, a, b, mu_d, Lambda_m, N);
 						break;
-					case BRUTE_FORCE:
-						S += BruteDoubleSum(d0, d1, m0, m1, Lambda, mu, N);
-
-						if (A0 != B0 || A1 != B1) // Non-diagonal case.
-						{
-							Lambda = Elementary::sieve.LambdaSegmented(m0, D);
-							mu = Elementary::sieve.MuSegmented(d0, D);
-							S += BruteDoubleSum(d0, d1, m0, m1, mu, Lambda, N);
-						}
+					case LINEAR_APPR_NONDIAG:
+						S += DoubleSum(d0, d1, m0, m1, a, b, mu_d, Lambda_m, N);
+						S += DoubleSum(d0, d1, m0, m1, a, b, Lambda_d, mu_m, N);
+						break;
+					case BRUTE_FORCE_DIAG:
+						S += BruteDoubleSum(m0, m1, d0, d1, Lambda_m, mu_d, N);
+						break;
+					case BRUTE_FORCE_NONDIAG:
+						S += BruteDoubleSum(m0, m1, d0, d1, Lambda_m, mu_d, N);
+						S += BruteDoubleSum(d0, d1, m0, m1, Lambda_d, mu_m, N);
 						break;
 				}
 			}
@@ -441,38 +441,39 @@ namespace CompPsi
 	float_dec_100 PsiElem::IndependentVar(uint64_t N, uint64_t M0) // Returns sum_{mdk <= N, m,d <= M0} Lambda(m)mu(d) = sum_{m,d <= M0} Lambda(m)mu(d)floor(N/md).
 	{
 		float_dec_100 S(0);
-		uint64_t A1 = M0 + 1, B1 = M0 + 1;
-		uint64_t C = 1, D = 2; // Hand-tuned by Helfgott & Thompson, 2023. TODO: Change back to C = 10, D = 8.
+		int64_t A1 = M0 + 1, B1 = M0 + 1;
+		int64_t C = 1, D = 2; // Hand-tuned by Helfgott & Thompson, 2023. TODO: Change back to C = 10, D = 8.
 
 		while (A1 >= 2 * std::pow(6 * C * C * C * N, 0.25) &&
 			   A1 >= std::sqrt(M0) + 1 &&
 			   A1 >= 2 * D)
 		{
-			B1 = A1;
 			uint64_t A = A1 - 2 * (A1 / (2 * D));
 			double cbrt = std::cbrt((double)A / (6 * N));
-			uint64_t a = A * cbrt;
-			while (B1 >= 2 * std::cbrt(6 * C * C * C * N / A) &&
+			int64_t a = A * cbrt;
+			while (B1 >= 2 * C * std::cbrt(6 * N / A) &&
 				   B1 >= std::sqrt(M0) + 1 &&
 				   B1 >= 2 * D)
 			{
-				uint64_t B = B1 - 2 * (B1 / (2 * D));
-				uint64_t b = B * cbrt;
+				int64_t B = B1 - 2 * (B1 / (2 * D));
+				int64_t b = B * cbrt;
 
-				uint64_t D = (1 + M0 / std::max(2 * a, 2 * b)) * std::max(2 * a, 2 * b);
+				int64_t D = (1 + M0 / std::max(2 * a, 2 * b)) * std::max(2 * a, 2 * b);
 
-				S += DDSum(A, A1, B, B1, N, D, LINEAR_APPR, a, b);
+				int mode = (A == B && A1 == B1) ? LINEAR_APPR_DIAG : LINEAR_APPR_NONDIAG;
+				S += DDSum(A, A1, B, B1, N, D, mode, a, b);
 
 				B1 = B;
 			}
 
 			// Remaining part is done by brute force.
-			S += DDSum(A, A1, 1, B1, N, std::sqrt(M0) + 1, BRUTE_FORCE, 0, 0);
+			S += DDSum(A, A1, 1, B1, N, std::sqrt(M0) + 1, BRUTE_FORCE_NONDIAG, 0, 0);
 			A1 = A;
+			B1 = A;
 		}
 
 		// The remaining rectangle is done again by brute force.
-		S += DDSum(1, A1, 1, B1, N, std::sqrt(M0) + 1, BRUTE_FORCE, 0, 0);
+		S += DDSum(1, A1, 1, B1, N, std::sqrt(M0) + 1, BRUTE_FORCE_DIAG, 0, 0);
 
 		std::cout << "IV: " << S << std::endl;
 		return S;

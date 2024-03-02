@@ -42,14 +42,14 @@ namespace Elementary
 
 	extern SegmentedSieve sieve;
 
+	// Class specifically for finding Diophantine approximations.
 	class DiophAppr
 	{
 	public:
 		// Returns a tuple (p, p', q, s) of integers so that abs(alpha - p/q) <= 1/(qQ)
-		// with gcd(p, q) = 1, q <= Q, and pp' = 1 mod q, while s = sign(alpha - p/q).
-		// Algorithm taken directly from a published paper from 2023 by H. A. Helfgott and L. Thompson,
-		// apart from a single edit of initializing qm to 1.
-		static std::tuple<uint64_t, uint64_t, uint64_t, int> ApprByRedFrac(double alpha, uint64_t Q);
+		// with gcd(p, q) = 1, q <= Q, and pp' = 1 mod q, while s = sgn(alpha - p/q).
+		// Algorithm taken from a published paper from 2023 by H. A. Helfgott and L. Thompson.
+		static std::tuple<int64_t, int64_t, int64_t, int> ApprByRedFrac(double alpha, int64_t Q);
 	};
 
 	// Returns the first integer k >= n congruent to a modulo q.

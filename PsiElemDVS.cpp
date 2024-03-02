@@ -11,7 +11,9 @@ namespace CompPsi
 	{
 		uint64_t M = std::sqrt(N);
 		uint64_t M0 = std::max(1, (int)(std::pow(N, 0.4) * std::pow(std::log(std::log(N)) / std::log(N), 0.6)));
-		return DependentVar(N, M, M0) + IndependentVar(N, M0);
+		
+		return IndependentVar(N, M);
+		//return DependentVar(N, M, M0) + IndependentVar(N, M0);
 	}
 
 	float_dec_100 PsiElem::DependentVar(uint64_t N, uint64_t M, uint64_t M0)
@@ -51,7 +53,6 @@ namespace CompPsi
 					if (mu[K1 - i - 1] != 0)
 					{
 						sum_DLambda += SegmentSumDivSumLambda(DLambda_index, N / d, N, K2);
-						//std::cout << "sum_DLambda = " << sum_DLambda << std::endl;
 						DLambda_index = N / d;
 						sum += mu[K1 - i - 1] * (sum_DLambda - sum_LambdaFl);
 					}
@@ -70,7 +71,6 @@ namespace CompPsi
 					if (Lambda[K1 - i - 1].n > 1)
 					{
 						sum_Dmu += SegmentSumDivSumMu(Dmu_index, N / m, N, K2);
-						//std::cout << "sum_Dmu = " << sum_Dmu << std::endl;
 						Dmu_index = N / m;
 
 						sum += Lambda[K1 - i - 1].numerical() * (sum_Dmu - sum_muFl);
