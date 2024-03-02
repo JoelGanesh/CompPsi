@@ -8,7 +8,7 @@ namespace Utility
 	static void IO::Print(std::vector<T> v, std::string sep)
 	{
 		std::cout << v[0];
-		for (uint64_t n = 1; n < v.size(); n++)
+		for (int64_t n = 1; n < v.size(); n++)
 		{
 			std::cout << sep << v[n];
 		}

@@ -3,7 +3,7 @@
 
 namespace CompPsi
 {
-	float_dec_100 PsiBF::Psi(uint64_t N)
+	float_dec_100 PsiBF::Psi(int64_t N)
 	{
 		float_dec_100 sum = 0;
 		std::vector<Prime> primes = Elementary::sieve.Primes(N);

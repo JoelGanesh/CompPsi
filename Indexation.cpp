@@ -7,7 +7,7 @@ namespace Utility
 		return RestrictedTuples(n, a, a.size() - 1);
 	}
 
-	std::vector<std::vector<int>> Indexation::RestrictedTuples(int n, std::vector<int> a, uint64_t index)
+	std::vector<std::vector<int>> Indexation::RestrictedTuples(int n, std::vector<int> a, int64_t index)
 	{
 		std::vector<std::vector<int>> tuples;
 		if (n >= 0 && index >= 0)

@@ -14,8 +14,8 @@
 #include <fftw3.h>
 
 typedef int     Exponent;
-typedef uint64_t  Prime;
-typedef uint64_t  PrimePower;
+typedef int64_t  Prime;
+typedef int64_t  PrimePower;
 typedef int  PrimeIndex;
 typedef std::vector<int> Tuple;
 typedef std::vector<Tuple> Tuples;
@@ -27,7 +27,7 @@ using float_dec_100 = boost::multiprecision::cpp_dec_float_50;
 using complex_128 = boost::multiprecision::complex128;
 
 using namespace boost::multiprecision;
-//typedef boost::multiprecision::uint128_t uint128_t;
+//typedef boost::multiprecision::int128_t int128_t;
 
 namespace Types
 {
@@ -79,12 +79,12 @@ namespace Types
 
 	struct Rectangle
 	{
-		uint64_t N, M, m0, d0, a, b, a0, a0_inv, q, s;
+		int64_t N, M, m0, d0, a, b, a0, a0_inv, q, s;
 		double delta;
 
-		Rectangle(uint64_t N, uint64_t M, uint64_t m0, uint64_t d0, uint64_t a, uint64_t b);
+		Rectangle(int64_t N, int64_t M, int64_t m0, int64_t d0, int64_t a, int64_t b);
 
-		std::tuple<double, uint64_t> beta_r0(uint64_t m);
+		std::tuple<double, int64_t> beta_r0(int64_t m);
 	};
 
 	struct Interval
@@ -141,10 +141,10 @@ namespace Types
 	// Placeholder for logarithms of positive integers.
 	struct Log
 	{
-		uint64_t n;
+		int64_t n;
 
 		// Constructor
-		Log(uint64_t n);
+		Log(int64_t n);
 
 		// Retrieve approximate value.
 		float_dec_100 numerical() const;
@@ -164,7 +164,7 @@ namespace Types
 
 		PrimeFactor(Prime p, Exponent exp);
 
-		operator uint64_t();
+		operator int64_t();
 		operator std::string();
 	};
 
@@ -177,14 +177,14 @@ namespace Types
 
 		// Product of the prime factors which have been added
 		// with corresponding parameter 'update_n' equal to true.
-		uint64_t n_;
+		int64_t n_;
 
 	public:
 		// Constructor
 		Factorization() : n_(1) {};
 
 		// Returns n_.
-		const uint64_t n();
+		const int64_t n();
 
 		// Make it possible to read the prime factors
 		// without being able to change them out-of-scope.
@@ -203,14 +203,14 @@ namespace Types
 		std::vector<Prime> primes_;
 
 		// Product of the prime factors.
-		uint64_t n_;
+		int64_t n_;
 
 	public:
 		// Constructor
 		SqFreeFactorization() : n_(1), primes_() {};
 
 		const std::vector<Prime> Primes();
-		virtual uint64_t n();
+		virtual int64_t n();
 
 		virtual void AddFactor(Prime p);
 

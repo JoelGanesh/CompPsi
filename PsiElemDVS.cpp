@@ -7,20 +7,20 @@
 
 namespace CompPsi
 {
-	float_dec_100 PsiElem::Psi0(uint64_t N)
+	float_dec_100 PsiElem::Psi0(int64_t N)
 	{
-		uint64_t M = std::sqrt(N);
-		uint64_t M0 = std::max(1, (int)(std::pow(N, 0.4) * std::pow(std::log(std::log(N)) / std::log(N), 0.6)));
+		int64_t M = std::sqrt(N);
+		int64_t M0 = std::max(1, (int)(std::pow(N, 0.4) * std::pow(std::log(std::log(N)) / std::log(N), 0.6)));
 		
 		return IndependentVar(N, M);
 		//return DependentVar(N, M, M0) + IndependentVar(N, M0);
 	}
 
-	float_dec_100 PsiElem::DependentVar(uint64_t N, uint64_t M, uint64_t M0)
+	float_dec_100 PsiElem::DependentVar(int64_t N, int64_t M, int64_t M0)
 	{
 		float_dec_100 sum(0);
-		uint64_t K1 = std::sqrt(M); // Batch length for segmented sieves over [M0, M].
-		uint64_t K2 = std::sqrt(N / M0); // Batch length for segmented sieves over [N/M, N/M0].
+		int64_t K1 = std::sqrt(M); // Batch length for segmented sieves over [M0, M].
+		int64_t K2 = std::sqrt(N / M0); // Batch length for segmented sieves over [N/M, N/M0].
 
 		// We compute the sums
 		// 1. sum_{M0 < d <= M} mu(d) sum_{n <= N/d} D_{Lambda}(n,N/n),
@@ -35,8 +35,8 @@ namespace CompPsi
 		float_dec_100 sum_DLambda = boost::multiprecision::lgamma(float_dec_100(M + 1));
 		float_dec_100 sum_LambdaFl(0);
 		int64_t sum_Dmu(1), sum_muFl(0);
-		uint64_t DLambda_index(M), Dmu_index(M);
-		for (uint64_t n = M; n > M0; n -= K1)
+		int64_t DLambda_index(M), Dmu_index(M);
+		for (int64_t n = M; n > M0; n -= K1)
 		{
 			K1 = std::min(K1, n - M0);
 
@@ -45,10 +45,10 @@ namespace CompPsi
 			{
 				std::vector<int> mu = Elementary::sieve.MuSegmented(n - K1 + 1, K1);
 				std::vector<Log> Lambda = Elementary::sieve.LambdaSegmented(n - K1 + 1, K1);
-				for (uint64_t i = 0; i < K1; i++)
+				for (int64_t i = 0; i < K1; i++)
 				{
 					// Process (n - K1, n] by considering d = n - i, i = 0, 1, ..., K1 - 1.
-					uint64_t d = n - i;
+					int64_t d = n - i;
 
 					if (mu[K1 - i - 1] != 0)
 					{
@@ -62,10 +62,10 @@ namespace CompPsi
 			{
 				std::vector<Log> Lambda = Elementary::sieve.LambdaSegmented(n - K1 + 1, K1);
 				std::vector<int> mu = Elementary::sieve.MuSegmented(n - K1 + 1, K1);
-				for (uint64_t i = 0; i < K1; i++)
+				for (int64_t i = 0; i < K1; i++)
 				{
 					// Process (n - K1, n] by considering m = n - i, i = 0, 1, ..., K1 - 1.
-					uint64_t m = n - i;
+					int64_t m = n - i;
 
 					sum_muFl += mu[K1 - i - 1] * (N / (m * m));
 					if (Lambda[K1 - i - 1].n > 1)
@@ -82,7 +82,7 @@ namespace CompPsi
 		return sum;
 	}
 
-	uint64_t PsiElem::RestrictedDivSumMu(Factorization& F, uint64_t a)
+	int64_t PsiElem::RestrictedDivSumMu(Factorization& F, int64_t a)
 	{
 		int n = 1;
 		for (PrimeFactor q : F.primeFactors())
@@ -93,7 +93,7 @@ namespace CompPsi
 	}
 
 	// The primefactors in F are sorted from small to large, so we can proceed by keeping track of the index.
-	uint64_t PsiElem::RestrictedDSM_(Factorization& F, int64_t index, uint64_t m1, uint64_t m2, uint64_t a, uint64_t n)
+	int64_t PsiElem::RestrictedDSM_(Factorization& F, int64_t index, int64_t m1, int64_t m2, int64_t a, int64_t n)
 	{
 		if (m1 > a)
 		{
@@ -112,7 +112,7 @@ namespace CompPsi
 		return RestrictedDSM_(F, index - 1, m1, p * m2, a, n) - RestrictedDSM_(F, index - 1, m1 * p, m2, a, n);
 	}
 	
-	float_dec_100 PsiElem::RestrictedDivSumLambda(Factorization& F, uint64_t a)
+	float_dec_100 PsiElem::RestrictedDivSumLambda(Factorization& F, int64_t a)
 	{
 		float_dec_100 sum(0);
 		for (PrimeFactor pf : F.primeFactors())

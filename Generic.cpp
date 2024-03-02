@@ -6,10 +6,10 @@ namespace Utility
 	std::vector<Y> Generic::Map(std::vector<X> v, std::function<Y(X)> f)
 
 	template <typename T>
-	T Generic::Sum(std::function<T(uint64_t)> f, Interval I)
+	T Generic::Sum(std::function<T(int64_t)> f, Interval I)
 	{
 		T sum = 0;
-		for (uint64_t n = I.start; n <= I.end; n++)
+		for (int64_t n = I.start; n <= I.end; n++)
 		{
 			sum += f(n);
 		}
@@ -17,10 +17,10 @@ namespace Utility
 	}
 
 	template <typename T>
-	std::vector<uint64_t> Generic::IndexAll(std::vector<T> v, T value, uint64_t offset)
+	std::vector<int64_t> Generic::IndexAll(std::vector<T> v, T value, int64_t offset)
 	{
-		std::vector<uint64_t> res;
-		for (uint64_t i = 0; i < v.size(); i++)
+		std::vector<int64_t> res;
+		for (int64_t i = 0; i < v.size(); i++)
 		{
 			if (v[i] == value)
 			{
@@ -39,7 +39,7 @@ namespace Utility
 		}
 
 		T res(v[0]);
-		for (uint64_t i = 1; i < v.size(); i++)
+		for (int64_t i = 1; i < v.size(); i++)
 		{
 			res = merge(res, sep);
 			res = merge(res, T(v[i]));
@@ -49,13 +49,13 @@ namespace Utility
 	}
 
 	template <typename T>
-	uint64_t Generic::FindIndex(std::vector<T> v, T value)
+	int64_t Generic::FindIndex(std::vector<T> v, T value)
 	{
-		uint64_t min_index = 0;
-		uint64_t max_index = v.size() - 1;
+		int64_t min_index = 0;
+		int64_t max_index = v.size() - 1;
 		while (min_index < max_index)
 		{
-			uint64_t mean = (min_index + max_index) / 2;
+			int64_t mean = (min_index + max_index) / 2;
 			if (v[mean] < value)
 			{
 				min_index = mean + 1;
@@ -69,7 +69,7 @@ namespace Utility
 	}
 
 	template <typename T>
-	std::vector<T> Generic::Copy(T* data, uint64_t size)
+	std::vector<T> Generic::Copy(T* data, int64_t size)
 	{
 		std::vector<T> v(size);
 		for (int i = 0; i < size; i++)
@@ -82,7 +82,7 @@ namespace Utility
 	template <typename T>
 	void Generic::Assign(std::vector<T> data, T* ptr)
 	{
-		for (uint64_t i = 0; i < data.size(); i++)
+		for (int64_t i = 0; i < data.size(); i++)
 		{
 			ptr[i] = data[i];
 		}

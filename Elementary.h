@@ -14,30 +14,30 @@ namespace Elementary
 	{
 	private:
 		std::vector<Prime> primes;
-		uint64_t N;
+		int64_t N;
 
 		// Returns first integer multiple of k occurring not less than a.
-		static uint64_t FirstMultipleAfter(uint64_t a, uint64_t k);
+		static int64_t FirstMultipleAfter(int64_t a, int64_t k);
 	public:
 		// Constructor
 		SegmentedSieve() : N(1) {};
 
 		// Computes and returns the list of the primes up to (and including) N.
-		std::vector<Prime> Primes(uint64_t N);
+		std::vector<Prime> Primes(int64_t N);
 
 		// Computes and returns the list of primes in [N, N + S).
-		std::vector<Prime> PrimesSegmented(uint64_t N, uint64_t S);
+		std::vector<Prime> PrimesSegmented(int64_t N, int64_t S);
 
 		// Computes and returns the values of mu(n) for n in [N, N + S).
-		std::vector<int> MuSegmented(uint64_t N, uint64_t S);
+		std::vector<int> MuSegmented(int64_t N, int64_t S);
 
 		// Computes and returns the values of Lambda(n) for n in [N, N + S).
-		std::vector<Log> LambdaSegmented(uint64_t N, uint64_t S);
+		std::vector<Log> LambdaSegmented(int64_t N, int64_t S);
 
 		// Computes and returns the complete primefactorization of all integers in [N, N + S).
-		std::vector<Factorization> FactorizationSegmented(uint64_t N, uint64_t S);
+		std::vector<Factorization> FactorizationSegmented(int64_t N, int64_t S);
 
-		//std::vector<SqFreeFactorization> SqFreeFactorizationSegmented(uint64_t N, uint64_t S);
+		//std::vector<SqFreeFactorization> SqFreeFactorizationSegmented(int64_t N, int64_t S);
 	};
 
 	extern SegmentedSieve sieve;

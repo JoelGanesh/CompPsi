@@ -32,10 +32,10 @@ namespace Utility
 		// Also allows an offset parameter, used to replace an index i by i + offset.
 		// T should support comparison (equality) of elements.
 		template <typename T>
-		static std::vector<uint64_t> IndexAll(std::vector<T> v, T value, uint64_t offset = 0)
+		static std::vector<int64_t> IndexAll(std::vector<T> v, T value, int64_t offset = 0)
 		{
-			std::vector<uint64_t> res;
-			for (uint64_t i = 0; i < v.size(); i++)
+			std::vector<int64_t> res;
+			for (int64_t i = 0; i < v.size(); i++)
 			{
 				if (v[i] == value)
 				{
@@ -48,7 +48,7 @@ namespace Utility
 		// Compute the sum of values of some function f over integers in some interval I.
 		// T should support addition.
 		//template <typename T>
-		//static T Sum(std::function<T(uint64_t)> f, Interval I);
+		//static T Sum(std::function<T(int64_t)> f, Interval I);
 
 		// Merges objects of a certain type together with a separator.
 		// It is assumed that an implict conversion from type S to type T has been implemented.
@@ -59,13 +59,13 @@ namespace Utility
 		// using a Binary Search approach. If it does not exist, returns 0.
 		// Assumes that v[i] <= v[j] for i <= j, with '<' defined on T.
 		template <typename T>
-		static uint64_t FindIndex(std::vector<T> v, T value)
+		static int64_t FindIndex(std::vector<T> v, T value)
 		{
-			uint64_t min_index = 0;
-			uint64_t max_index = v.size() - 1;
+			int64_t min_index = 0;
+			int64_t max_index = v.size() - 1;
 			while (min_index < max_index)
 			{
-				uint64_t mean = (min_index + max_index) / 2;
+				int64_t mean = (min_index + max_index) / 2;
 				if (v[mean] < value)
 				{
 					min_index = mean + 1;
@@ -81,7 +81,7 @@ namespace Utility
 		// Copies the data referenced by a pointer to a vector.
 		// It is assumed that 'size' equals the size of 'data'.
 		template <typename T>
-		static std::vector<T> Copy(T* data, uint64_t size)
+		static std::vector<T> Copy(T* data, int64_t size)
 		{
 			std::vector<T> v(data, data + size);
 			return v;
@@ -92,7 +92,7 @@ namespace Utility
 		template <typename T>
 		static void Assign(std::vector<T> data, T* ptr)
 		{
-			for (uint64_t i = 0; i < data.size(); i++)
+			for (int64_t i = 0; i < data.size(); i++)
 			{
 				ptr[i] = data[i];
 			}
@@ -133,7 +133,7 @@ namespace Utility
 
 		private:
 		// Recursive function computing tuples (k_j, ..., k_d) as in 'RestrictedTuples' above, where j = index + 1.
-		static std::vector<std::vector<int>> RestrictedTuples(int n, std::vector<int> a, uint64_t index);
+		static std::vector<std::vector<int>> RestrictedTuples(int n, std::vector<int> a, int64_t index);
 	};
 
 	// Class for functions related to input and output.
@@ -146,7 +146,7 @@ namespace Utility
 		static void Print(std::vector<T> v, std::string sep = " ")
 		{
 			std::cout << v[0];
-			for (uint64_t n = 1; n < v.size(); n++)
+			for (int64_t n = 1; n < v.size(); n++)
 			{
 				std::cout << sep << v[n];
 			}

@@ -14,7 +14,7 @@ int main()
 
 	while (true)
 	{
-		uint64_t n, k;
+		int64_t n, k;
 		std::cin >> n;
 		//std::cin >> k;
 

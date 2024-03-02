@@ -11,16 +11,16 @@
 
 namespace Elementary
 {
-	std::vector<Prime> SegmentedSieve::Primes(uint64_t N)
+	std::vector<Prime> SegmentedSieve::Primes(int64_t N)
 	{
-		uint64_t M = this->N;
+		int64_t M = this->N;
 
 		// If N is less than M, we have already stored all the necessary primes.
 		// If N is not much smaller than M, it might be benificial to just return all primes.
 		//if (N <= M / 2)
 		//{
 		//    // We return the subvector of primes consisting of all primes not larger than N.
-		//    uint64_t max_index = Utility::Generic::FindIndex(primes, N);
+		//    int64_t max_index = Utility::Generic::FindIndex(primes, N);
 		//    return std::vector<Prime>(primes.begin(), primes.begin() + max_index + 1);
 		//}
 		if (M < N)
@@ -30,22 +30,22 @@ namespace Elementary
 			// First remove the multiples of primes we already know of.
 			for (Prime p : primes)
 			{
-				for (uint64_t n = FirstMultipleAfter(M + 1, p); n <= N; n += p)
+				for (int64_t n = FirstMultipleAfter(M + 1, p); n <= N; n += p)
 				{
 					prime[n - (M + 1)] = false;
 				}
 			}
 
 			// We proceed by using the idea behind the sieve of Eratosthenes to find the remaining primes.
-			uint64_t K = std::sqrt(N);
-			for (uint64_t n = M + 1; n <= K; n++)
+			int64_t K = std::sqrt(N);
+			for (int64_t n = M + 1; n <= K; n++)
 			{
 				// If n is prime, mark proper multiples of n to be composite.
 				// Note that an integer 'n' in [M + 1, N] corresponds to the [n - (M+1)]-th entry in 'prime'.
 				if (prime[n - (M + 1)])
 				{
 					// Small optimization: it suffices to mark multiples of n >= n^2.
-					for (uint64_t k = n * n; k <= N; k += n)
+					for (int64_t k = n * n; k <= N; k += n)
 					{
 						prime[k - (M + 1)] = false;
 					}
@@ -62,9 +62,9 @@ namespace Elementary
 		return primes;
 	}
 
-	std::vector<Prime> SegmentedSieve::PrimesSegmented(uint64_t N, uint64_t S)
+	std::vector<Prime> SegmentedSieve::PrimesSegmented(int64_t N, int64_t S)
 	{
-		const uint64_t M(std::sqrt(N + S));
+		const int64_t M(std::sqrt(N + S));
 		Primes(M);
 
 		std::vector<bool> prime = std::vector<bool>(S, true); // Represents integers N, ..., N+S-1.
@@ -77,27 +77,27 @@ namespace Elementary
 			{
 				break;
 			}
-			for (uint64_t n = FirstMultipleAfter(N, p); n < N + S; n += p)
+			for (int64_t n = FirstMultipleAfter(N, p); n < N + S; n += p)
 			{
 				prime[n - N] = false;
 			}
 		}
 
 		// The remaining indices correspond to primes.
-		std::vector<uint64_t> primeIndices = Utility::Generic::IndexAll(prime, true, N);
+		std::vector<int64_t> primeIndices = Utility::Generic::IndexAll(prime, true, N);
 		return primeIndices;
 	}
 
-	std::vector<int> SegmentedSieve::MuSegmented(uint64_t N, uint64_t S)
+	std::vector<int> SegmentedSieve::MuSegmented(int64_t N, int64_t S)
 	{
-		const uint64_t M(std::sqrt(N + S));
+		const int64_t M(std::sqrt(N + S));
 		Primes(M);
 
 		std::vector<int> mu = std::vector<int>(S, 1); // Represents mu values of N, ..., N+S-1.
 
 		// We keep track of the products of prime factors in 'primes' of integers in [N, N+S),
 		// in order to find a potential last prime factor of integers [N, N+S) larger than any prime in 'primes'.
-		std::vector<uint64_t> product = std::vector<uint64_t>(S, 1);
+		std::vector<int64_t> product = std::vector<int64_t>(S, 1);
 
 		for (Prime p : primes)
 		{
@@ -106,14 +106,14 @@ namespace Elementary
 				break;
 			}
 			// Multiples of p^2 should be assigned a value of 0, as they are not squarefree.
-			uint64_t q = p * p;
-			for (uint64_t n = FirstMultipleAfter(N, q); n < N + S; n += q)
+			int64_t q = p * p;
+			for (int64_t n = FirstMultipleAfter(N, q); n < N + S; n += q)
 			{
 				mu[n - N] = 0;
 			}
 			// For the other multiples of p, we flip the sign accordingly.
 			// (Note that mu is multiplicative, and mu(p) = -1 for any prime p.)
-			for (uint64_t n = FirstMultipleAfter(N, p); n < N + S; n += p)
+			for (int64_t n = FirstMultipleAfter(N, p); n < N + S; n += p)
 			{
 				mu[n - N] *= -1;
 				if (mu[n - N] != 0)
@@ -125,7 +125,7 @@ namespace Elementary
 
 		// We take into account that we may have missed the largest prime factor of integers in [N, N+S).
 		// This is the case precisely when the stored product is not equal to the corresponding integer.
-		for (uint64_t n = N; n < N + S; n++)
+		for (int64_t n = N; n < N + S; n++)
 		{
 			if (product[n - N] != n)
 			{
@@ -136,9 +136,9 @@ namespace Elementary
 		return mu;
 	}
 
-	std::vector<Log> SegmentedSieve::LambdaSegmented(uint64_t N, uint64_t S)
+	std::vector<Log> SegmentedSieve::LambdaSegmented(int64_t N, int64_t S)
 	{
-		const uint32_t M(std::sqrt(N + S));
+		const int32_t M(std::sqrt(N + S));
 		Primes(M);
 
 		std::vector<Log> Lambda = std::vector<Log>(S, Log(0)); // Represent Lambda values of N, ..., N+S-1.
@@ -150,7 +150,7 @@ namespace Elementary
 				break;
 			}
 			// Mark multiples of p to not be large primes.
-			for (uint64_t n = FirstMultipleAfter(N, p); n < N + S; n += p)
+			for (int64_t n = FirstMultipleAfter(N, p); n < N + S; n += p)
 			{
 				large_prime[n - N] = false;
 			}
@@ -161,14 +161,14 @@ namespace Elementary
 			{
 				q *= p;
 			}
-			for (uint64_t n = q; n < N + S; n *= p)
+			for (int64_t n = q; n < N + S; n *= p)
 			{
 				Lambda[n - N] = Log(p);
 			}
 		}
 
 		// We take into account that we missed the primes > S.
-		for (uint64_t n = N; n < N + S; n++)
+		for (int64_t n = N; n < N + S; n++)
 		{
 			if (large_prime[n - N])
 			{
@@ -179,13 +179,13 @@ namespace Elementary
 		return Lambda;
 	}
 
-	std::vector<Factorization> SegmentedSieve::FactorizationSegmented(uint64_t N, uint64_t S)
+	std::vector<Factorization> SegmentedSieve::FactorizationSegmented(int64_t N, int64_t S)
 	{
-		const uint32_t M(std::sqrt(N + S));
+		const int32_t M(std::sqrt(N + S));
 		Primes(M);
 
 		std::vector<Factorization> factorizations(S, Factorization()); // Represent factorizations of N, ..., N+S-1.
-		std::vector<uint64_t> products(S, 1);
+		std::vector<int64_t> products(S, 1);
 		for (Prime p : primes)
 		{
 			if (p > M)
@@ -196,7 +196,7 @@ namespace Elementary
 			Exponent j = 1;
 			while (q < N + S)
 			{
-				for (uint64_t k = FirstMultipleAfter(N, q); k < N + S; k += q)
+				for (int64_t k = FirstMultipleAfter(N, q); k < N + S; k += q)
 				{
 					// If p^{j+1} does not divide k, then v_p(k) = j, so we should add the pair (p, j).
 					if (k % (p * q) != 0)
@@ -211,11 +211,11 @@ namespace Elementary
 		}
 
 		// It remains for us to mark prime factors larger than S.
-		for (uint64_t k = N; k < N + S; k++)
+		for (int64_t k = N; k < N + S; k++)
 		{
 			if (k != products[k - N])
 			{
-				uint64_t p = k / products[k - N];
+				int64_t p = k / products[k - N];
 				factorizations[k - N].AddFactor(p, 1);
 			}
 		}
@@ -223,7 +223,7 @@ namespace Elementary
 		return factorizations;
 	}
 
-	uint64_t SegmentedSieve::FirstMultipleAfter(uint64_t a, uint64_t k)
+	int64_t SegmentedSieve::FirstMultipleAfter(int64_t a, int64_t k)
 	{
 		if (a % k == 0)
 		{

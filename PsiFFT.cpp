@@ -10,7 +10,7 @@
 
 namespace CompPsi
 {
-	float_dec_100 PsiFFT::Psi0(uint64_t N)
+	float_dec_100 PsiFFT::Psi0(int64_t N)
 	{
 		Elementary::SegmentationArray<float_dec_100> segmentationArray(N);
 		const int S = N * (pow(8, 1.0 / std::sqrt(N)) - 1);
@@ -19,7 +19,7 @@ namespace CompPsi
 		return result;
 	}
 
-	float_dec_100 PsiFFT::SegmentationFFT(const uint64_t N, Elementary::SegmentationArray<float_dec_100> segmArray) // Returns sum_{k1+...+k4 <= k} Mu_z[k1]Mu_z[k2]One[k3]Log[k4] using FFT algorithm. F[j] is the j-th index of the segmentation of f and k = floor(log2(n)/delta).
+	float_dec_100 PsiFFT::SegmentationFFT(const int64_t N, Elementary::SegmentationArray<float_dec_100> segmArray) // Returns sum_{k1+...+k4 <= k} Mu_z[k1]Mu_z[k2]One[k3]Log[k4] using FFT algorithm. F[j] is the j-th index of the segmentation of f and k = floor(log2(n)/delta).
 	{
 		std::vector<float_dec_100> segmentedMu = segmArray.Mu_M();
 		std::vector<float_dec_100> segmentedOne = segmArray.One();
@@ -30,7 +30,7 @@ namespace CompPsi
 			Utility::IO::Print(segments[i]);
 		}
 
-		uint64_t size = segmentedMu.size(); // Note: sizes of the segments are equal.
+		int64_t size = segmentedMu.size(); // Note: sizes of the segments are equal.
 		Fourier::FFTSimple FFTLib(size, 3); // The parameter 3 represents the number of arrays to be convoluted.
 		std::vector<float_dec_100> segmentation = FFTLib.Convolve(segments);
 		Utility::IO::Print(segmentation);
@@ -46,12 +46,12 @@ namespace CompPsi
 		return sum;
 	}
 
-	float_dec_100 PsiFFT::SegmentationError(const uint64_t N, const uint64_t S, Elementary::SegmentationArray<float_dec_100> segmArray) // Calculates error term sum_{d1d2d3d4 > N, k(d1)+...+k(d4) <= k} mu_z(d1)mu_z(d2)log(d_4), where k(m) = floor(log2(m)/delta), k = k(N).
+	float_dec_100 PsiFFT::SegmentationError(const int64_t N, const int64_t S, Elementary::SegmentationArray<float_dec_100> segmArray) // Calculates error term sum_{d1d2d3d4 > N, k(d1)+...+k(d4) <= k} mu_z(d1)mu_z(d2)log(d_4), where k(m) = floor(log2(m)/delta), k = k(N).
 	{
 		// We determine the prime factorizations of all integers in the critical interval (N, N+S]
 		std::vector<Factorization> factorizations = Elementary::sieve.FactorizationSegmented(N + 1, S);
 
-		uint64_t M = std::sqrt(N);
+		int64_t M = std::sqrt(N);
 
 		// We prepare tables for mu and Lambda for computation of errors.
 		std::vector<int> segmentMu = Elementary::sieve.MuSegmented(1, M + 1);
@@ -80,7 +80,7 @@ namespace CompPsi
 				P *= size;
 				sizes.push_back(size);
 			}
-			uint64_t indexMax = segmArray.index(N);
+			int64_t indexMax = segmArray.index(N);
 			for (int p = 0; p < P; p++)
 			{
 				std::vector<int> m = Utility::Indexation::IntToTuple(p, sizes);
@@ -90,12 +90,12 @@ namespace CompPsi
 				// Recall that these tuples a_{j,m[j]} contain |v| entries, corresponding to the |v| parts of a unique decomposition of the primepower p_j^{e_j}.
 				// We essentially want to finally combine the different prime powers into the |v| parts of the decomposition of n.
 				std::vector<Factorization> decomposition;
-				uint64_t indexSum = 0; // A decomposition should only contribute if the sum of the segmentation indices does not exceed the segmentation index of N.
+				int64_t indexSum = 0; // A decomposition should only contribute if the sum of the segmentation indices does not exceed the segmentation index of N.
 				for (int i = 0; i < v.size(); i++)
 				{
 					Factorization decomposition_factor = Factorization();
 					std::vector<PrimeFactor> primeFactors = factorization.primeFactors();
-					uint64_t product = 1;
+					int64_t product = 1;
 					for (int j = 0; j < primeFactors.size(); j++)
 					{
 						Prime primeFactor = primeFactors[j].prime;
@@ -120,8 +120,8 @@ namespace CompPsi
 					//std::cout << "D: "; 
 					//Utility::IO::Print(Utility::Generic::Map(decomposition, g));
 					// If the decomposition looks like (d0,d1,d2), we add mu_M(d0) * Lambda_M(d1)
-					uint64_t d = decomposition[0].n();
-					uint64_t m = decomposition[1].n();
+					int64_t d = decomposition[0].n();
+					int64_t m = decomposition[1].n();
 
 					if (d <= M && m <= M)
 					{

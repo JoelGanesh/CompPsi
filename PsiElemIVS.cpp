@@ -77,11 +77,11 @@ namespace CompPsi
 		SumTable(std::vector<T> g, int64_t q, int64_t b, int64_t m_index, int64_t a0)
 	{
 		std::vector<float_dec_100> G(2 * b), rho(q), sigma(q + 1, 0);
-		for (uint64_t m = 0; m < q; m++)
+		for (int64_t m = 0; m < q; m++)
 		{
 			G[m] = float_dec_100(g[m_index + m]);
 		}
-		for (uint64_t m = q; m < b; m++)
+		for (int64_t m = q; m < b; m++)
 		{
 			G[m] = G[m - q] + float_dec_100(g[m_index + m]);
 		}
@@ -114,14 +114,14 @@ namespace CompPsi
 		float_dec_100 S(0);
 		if (s < 0)
 		{
-			for (uint64_t m = b + q; m < 2 * b; m += q)
+			for (int64_t m = b + q; m < 2 * b; m += q)
 			{
 				S += float_dec_100(g[m_index + m]);
 			}
 		}
 		else if (s > 0)
 		{
-			for (uint64_t m = q; m <= b; m += q)
+			for (int64_t m = q; m <= b; m += q)
 			{
 				S += float_dec_100(g[m_index + b - m]);
 			}
@@ -139,12 +139,12 @@ namespace CompPsi
 								   double alpha0, double alpha1, double alpha2)
 	{
 		float_dec_100 S_f0(0), S_f1(0), S_g0(0), S_g1(0);
-		for (uint64_t d = 0; d < 2 * a; d++)
+		for (int64_t d = 0; d < 2 * a; d++)
 		{
 			S_f0 += float_dec_100(f[d_index + d]);
 			S_f1 += float_dec_100(f[d_index + d]) * std::floor(alpha0 + alpha1 * (d - a));
 		}
-		for (uint64_t m = 0; m < 2 * b; m++)
+		for (int64_t m = 0; m < 2 * b; m++)
 		{
 			S_g0 += float_dec_100(g[m_index + m]);
 			S_g1 += float_dec_100(g[m_index + m]) * std::floor(alpha2 * (m - b));
@@ -318,7 +318,7 @@ namespace CompPsi
 		std::vector<float_dec_100> rho = std::get<1>(tuple2);
 		std::vector<float_dec_100> sigma = std::get<2>(tuple2);
 
-		for (uint64_t d = 0; d < 2 * a; d++)
+		for (int64_t d = 0; d < 2 * a; d++)
 		{
 			if (float_dec_100(f[d_index + d]) != 0)
 			{
@@ -438,7 +438,7 @@ namespace CompPsi
 		return S;
 	}
 
-	float_dec_100 PsiElem::IndependentVar(uint64_t N, uint64_t M0) // Returns sum_{mdk <= N, m,d <= M0} Lambda(m)mu(d) = sum_{m,d <= M0} Lambda(m)mu(d)floor(N/md).
+	float_dec_100 PsiElem::IndependentVar(int64_t N, int64_t M0) // Returns sum_{mdk <= N, m,d <= M0} Lambda(m)mu(d) = sum_{m,d <= M0} Lambda(m)mu(d)floor(N/md).
 	{
 		float_dec_100 S(0);
 		int64_t A1 = M0 + 1, B1 = M0 + 1;
@@ -448,7 +448,7 @@ namespace CompPsi
 			   A1 >= std::sqrt(M0) + 1 &&
 			   A1 >= 2 * D)
 		{
-			uint64_t A = A1 - 2 * (A1 / (2 * D));
+			int64_t A = A1 - 2 * (A1 / (2 * D));
 			double cbrt = std::cbrt((double)A / (6 * N));
 			int64_t a = A * cbrt;
 			while (B1 >= 2 * C * std::cbrt(6 * N / A) &&
