@@ -2,7 +2,7 @@
 #include "Elementary.h"
 
 #include <numeric>
-
+#include <functional>
 #include <boost/multiprecision/cpp_dec_float.hpp>
 
 #define LINEAR_APPR_DIAG 0
@@ -58,7 +58,7 @@ namespace CompPsi
 		int64_t I0 = I.start, I1 = I.end;
 		if (I0 <= I1)
 		{
-			if (I0 != MINFTY)
+			if (I0 != MINFTY && I0 != INFTY)
 			{
 				I0--;
 			}
@@ -91,7 +91,7 @@ namespace CompPsi
 		{
 			G[m] = g[m_index + m];
 		}
-		for (int64_t m = q; m < b; m++)
+		for (int64_t m = q; m < 2 * b; m++)
 		{
 			G[m] = G[m - q] + g[m_index + m];
 		}
@@ -231,7 +231,7 @@ namespace CompPsi
 			}
 			else
 			{
-				J[j] = Interval(N / (d * (int64_t)std::floor(R0) + r0 + j) - m0 + 1, INFTY);
+				J[j] = Interval(N / (d * ((int64_t)std::floor(R0) + r0 + j)) - m0 + 1, INFTY);
 				//J[j] = Interval(MINFTY, N / (d * ((int64_t)std::floor(R0) + r0 + j)) - m0);
 			}
 		}
@@ -245,7 +245,7 @@ namespace CompPsi
 			- SumInter(G, 0, J[0], b, q) - SumInter(G, 0, J[1], b, q);
 	}
 
-	// Computation of L1 - L2 for the special case where a0(m-m0) + r0 = 0 mod q.
+	// Computation of L1 - L2 for the case where a0(m-m0) + r0 = 0 mod q.
 	// Algorithm by Helfgott & Thompson, 2023. Some comments are added for clarity.
 	static int64_t Special0A(std::vector<int64_t> G, int64_t q, int64_t a, int64_t a_inv,
 								   int64_t r0, int64_t b, double Q, int s_beta, int s_delta)
@@ -257,6 +257,7 @@ namespace CompPsi
 		if (0 < r0 && r0 < q)
 		{
 			// The interval I should be taken s.t. m in I iff beta + delta m >= 0.
+			// Recall that Q = beta / delta.
 			if (s_delta > 0)
 			{
 				I = Interval(std::ceil(-Q), INFTY);
@@ -265,7 +266,7 @@ namespace CompPsi
 			{
 				I = Interval(MINFTY, std::floor(-Q));
 			}
-			else if (s_beta >= 0) // s_delta = 0.
+			else if (s_beta >= 0) // delta = 0.
 			{
 				I = Interval(MINFTY, INFTY);
 			}
@@ -274,6 +275,7 @@ namespace CompPsi
 		{
 			// The interval I should be taken such that m in I if and only if
 			// (beta < 0 AND delta m < 0) OR (beta delta m < 0 AND beta + delta m >= 0).
+			// Recall that Q = beta / delta.
 			if (s_beta < 0)
 			{
 				if (s_delta < 0)
@@ -344,35 +346,71 @@ namespace CompPsi
 					Q = beta / delta;
 				}
 
-				// T represents the sum of mu(m) * (L(d, m) - L2(d, m)).
-				int64_t T(0);
-
-				// Consideration of difference L(d, m) - L1(d, m) for m : a0(m - m0) + r0 = 0, -1 mod q.
+				// Computation of difference mu(m) * (L(d, m) - L1(d, m)) for m : a0(m - m0) + r0 = 0, -1 mod q.
 				// (For other values of m, the difference is 0.)
+				int64_t T1(0);
 				if (q > 1)
 				{
 					// Account for case a0(m - m0) + r0 = -1 mod q.
-					T += Special1(G, N, q, a0, a0_inv, R0, r0, m0, d_, b);
+					T1 += Special1(G, N, q, a0, a0_inv, R0, r0, m0, d_, b);
 
 					// Account for case a0(m - m0) + r0 = 0 mod q.
-					T += Special0B(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_beta, sgn_delta);
+					T1 += Special0B(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_beta, sgn_delta);
 				}
 				else // Case q = 1.
 				{
-					T += Special00(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_delta);
+					T1 += Special00(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_delta);
 				}
 
-				// Consideration of difference L1(d, m) - L2(d, m) for m : a0(m - m0) + r0 != 0 mod q.
-				T += sigma[r0];
+				// Computation of difference mu(m) * (L1(d, m) - L2(d, m)).
+				int64_t T2(0);
+				// Contribution of m s.t. a0(m - m0) + r0 != 0 mod q.
+				T2 += sigma[r0];
 				if (0 < r0 && r0 < q)
 				{
-					T += raySum;
+					T2 += raySum;
 				}
 
-				// Consideration of difference L1(d, m) - L2(d, m) for m : a0(m - m0) + r0 = 0 mod q.
-				T += Special0A(G, q, a0, a0_inv, r0, b, Q, sgn_beta, sgn_delta);
+				// Contribution of m s.t. a0(m - m0) + r0 = 0 mod q.
+				T2 += Special0A(G, q, a0, a0_inv, r0, b, Q, sgn_beta, sgn_delta);
 
-				S += float_dec_100(f[d_index + d]) * T;
+				std::function<int(int, int)> L = [N, d0, m0, a, b](int d, int m) 
+					{ 
+						return N / ((d + d0 - a) * (m + m0 - b));
+					};
+				std::function<int(int, int)> L1 = [alpha0, alpha1, alpha2, a, b](int d, int m)
+					{
+						return std::floor(alpha0 + alpha1 * (d - a) + alpha2 * (m - b));
+					};
+				std::function<int(int, int)> L2 = [alpha0, alpha1, alpha2, a, b](int d, int m)
+					{
+						return std::floor(alpha0 + alpha1 * (d - a)) + std::floor(alpha2 * (m - b));
+					};
+
+				int64_t sum_LmL1(0), sum_L1mL2(0);
+				std::vector<int> mu = Elementary::sieve.MuSegmented(m0 - b, 2 * b);
+				for (int m = 0; m < 2 * b; m++)
+				{
+					sum_LmL1 += mu[m] * (L(d, m) - L1(d, m));
+					sum_L1mL2 += mu[m] * (L1(d, m) - L2(d, m));
+				}
+				if (T1 + T2 != sum_LmL1 + sum_L1mL2)
+				{
+					if (q == 1)
+					{
+						d--;
+					}
+					if (T1 != sum_LmL1)
+					{
+						int i = 0;
+					}
+					if (T2 != sum_L1mL2)
+					{
+						int i = 0;
+					}
+					continue;
+				}
+				S += (sum_LmL1 + sum_L1mL2) * f[d_index + d].numerical();
 			}
 		}
 		std::cout << d0 - a << " " << d0 + a - 1 << " " << m0 - b << " " << m0 + b - 1 << ": " << S << std::endl;

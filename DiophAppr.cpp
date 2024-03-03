@@ -34,6 +34,6 @@ namespace Elementary
 			s *= -1;
 		}
 		// As q[1] > Q, we resort to the previous approximation, i.e. pm / qm.
-		return std::make_tuple(sgn_alpha * p[0], (sgn_alpha * s * q[1]) % q[0], q[0], -sgn_alpha * s);
+		return std::make_tuple(sgn_alpha * p[0], (sgn_alpha * s * q[1]) % q[0], q[0], sgn_alpha * s);
 	}
 }
