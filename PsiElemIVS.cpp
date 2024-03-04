@@ -88,23 +88,23 @@ namespace CompPsi
 	// It is assumed that T can be cast to float_dec_100.
 	// Algorithm by Helfgott & Thompson, 2023.
 	static std::tuple<std::vector<int64_t>, std::vector<int64_t>, std::vector<int64_t>>
-		SumTable(std::vector<int> g, int64_t q, int64_t b, int64_t m_index, int64_t a0)
+		SumTable(std::function<int(int)> g, int64_t q, int64_t b, int64_t a0)
 	{
 		std::vector<int64_t> G(2 * b), rho(q), sigma(q + 1, 0);
-		for (int64_t m = 0; m < q; m++)
+		for (int64_t m = -b; m < -b + q; m++)
 		{
-			G[m] = g[m_index + m];
+			G[m + b] = g(m);
 		}
-		for (int64_t m = q; m < 2 * b; m++)
+		for (int64_t m = -b + q; m < b; m++)
 		{
-			G[m] = G[m - q] + g[m_index + m];
+			G[m + b] = G[m + b - q] + g(m);
 		}
 		int64_t r = Mod(a0 * (b - q), q);
 		int64_t a = Mod(a0, q);
 
-		for (int64_t m = 2 * b - q; m < 2 * b; m++)
+		for (int64_t m = b - q; m < b; m++)
 		{
-			rho[r] = G[m];
+			rho[r] = G[m + b];
 			r += a;
 			if (r >= q)
 			{
@@ -122,21 +122,21 @@ namespace CompPsi
 	// Returns the sum of values of g(n) for n of the form b + kq, for integers k with sk < 0.
 	// It is assumed that T can be cast to float_dec_100.
 	// Algorithm by Helfgott & Thompson, 2023.
-	static int64_t RaySum(std::vector<int> g, int64_t q, int64_t b, int64_t m_index, int s)
+	static int64_t RaySum(std::function<int(int)> g, int64_t q, int64_t b, int s)
 	{
 		int64_t S(0);
 		if (s < 0)
 		{
-			for (int64_t m = b + q; m < 2 * b; m += q)
+			for (int64_t m = q; m < b; m += q)
 			{
-				S += g[m_index + m];
+				S += g(m);
 			}
 		}
 		else if (s > 0)
 		{
 			for (int64_t m = q; m <= b; m += q)
 			{
-				S += g[m_index + b - m];
+				S += g(-m);
 			}
 		}
 		return S;
@@ -146,21 +146,21 @@ namespace CompPsi
 	// by separation of variables.
 	// It is assumed that T1 and T2 can be cast to float_dec_100.
 	// Algorithm by Helfgott & Thompson, 2023.
-	static float_dec_100 LinearSum(std::vector<Log> f, std::vector<int> g,
-								   int64_t a, int64_t b, int64_t d_index, int64_t m_index,
+	static float_dec_100 LinearSum(std::function<Log(int)> f, std::function<int(int)> g,
+								   int64_t a, int64_t b,
 								   double alpha0, double alpha1, double alpha2)
 	{
 		float_dec_100 S_f0(0), S_f1(0);
 		int64_t S_g0(0), S_g1(0);
-		for (int64_t d = 0; d < 2 * a; d++)
+		for (int64_t d = -a; d < a; d++)
 		{
-			S_f0 += f[d_index + d].numerical();
-			S_f1 += f[d_index + d].numerical() * std::floor(alpha0 + alpha1 * (d - a));
+			S_f0 += f(d).numerical();
+			S_f1 += f(d).numerical() * std::floor(alpha0 + alpha1 * d);
 		}
-		for (int64_t m = 0; m < 2 * b; m++)
+		for (int64_t m = -b; m < b; m++)
 		{
-			S_g0 += g[m_index + m];
-			S_g1 += g[m_index + m] * std::floor(alpha2 * (m - b));
+			S_g0 += g(m);
+			S_g1 += g(m) * std::floor(alpha2 * m);
 		}
 		return S_f0 * S_g1 + S_f1 * S_g0;
 	}
@@ -312,8 +312,8 @@ namespace CompPsi
 	// Algorithm by Helfgott & Thompson, 2023.
 	// It is assumed that a and b are such that the error in
 	// the linear approximation of N/xy is less than 1/2b.
-	static float_dec_100 SumByLinAppr(std::vector<Log> f, std::vector<int> g, int64_t N, int64_t d0, int64_t m0,
-									  int64_t a, int64_t b, int64_t d_index, int64_t m_index)
+	static float_dec_100 SumByLinAppr(std::function<Log(int)> f, std::function<int(int)> g, int64_t N, int64_t d0, int64_t m0,
+									  int64_t a, int64_t b)
 	{
 		double alpha0 = (double)N / (d0 * m0), alpha1 = -(double)N / (d0 * d0 * m0), alpha2 = -(double)N / (d0 * m0 * m0);
 
@@ -332,7 +332,7 @@ namespace CompPsi
 		std::vector<Log> Lambda = Elementary::sieve.LambdaSegmented(d0 - a, 2 * a);
 		std::vector<int> mu = Elementary::sieve.MuSegmented(m0 - b, 2 * b);
 
-		float_dec_100 S = LinearSum(f, g, a, b, d_index, m_index, alpha0, alpha1, alpha2);
+		float_dec_100 S = LinearSum(f, g, a, b, alpha0, alpha1, alpha2);
 
 		std::tuple<int64_t, int64_t, int64_t, int> tuple = Elementary::DiophAppr::ApprByRedFrac(alpha2, 2 * b);
 		int64_t a0 = std::get<0>(tuple);
@@ -341,22 +341,22 @@ namespace CompPsi
 		int sgn_delta = std::get<3>(tuple);
 		double delta = alpha2 - (double)a0 / q;
 
-		int64_t raySum = RaySum(g, q, b, m_index, sgn_delta);
+		int64_t raySum = RaySum(g, q, b, sgn_delta);
 
 		std::tuple<std::vector<int64_t>, std::vector<int64_t>, std::vector<int64_t>>
-			tuple2 = SumTable(g, q, b, m_index, a0);
+			tuple2 = SumTable(g, q, b, a0);
 		std::vector<int64_t> G = std::get<0>(tuple2);
 		std::vector<int64_t> rho = std::get<1>(tuple2);
 		std::vector<int64_t> sigma = std::get<2>(tuple2);
 
-		for (int64_t d = 0; d < 2 * a; d++)
+		for (int64_t d = -a; d < a; d++)
 		{
-			if (f[d_index + d].n > 1) // I.e., f[d_index + d] is non-zero.
+			if (f(d).n > 1) // I.e., f(d) is non-zero.
 			{
 				double R0 = alpha0 + alpha1 * (d - a);
 				double R0_frac = R0 - std::floor(R0);
 				int64_t r0 = std::floor(R0_frac * q + 0.5);
-				int64_t d_ = d0 + d - a;
+				int64_t d_ = d0 + d;
 				double beta = R0_frac - (double)r0 / q;
 				int sgn_beta = Sgn(beta);
 
@@ -366,7 +366,7 @@ namespace CompPsi
 					Q = beta / delta;
 				}
 
-				// Computation of difference mu(m) * (L(d, m) - L1(d, m)) for m : a0(m - m0) + r0 = 0, -1 mod q.
+				// Computation of difference g(m) * (L(d, m) - L1(d, m)) for m : a0(m - m0) + r0 = 0, -1 mod q.
 				// (For other values of m, the difference is 0.)
 				int64_t T1(0);
 				if (q > 1)
@@ -382,7 +382,7 @@ namespace CompPsi
 					T1 += Special00(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_delta);
 				}
 
-				// Computation of difference mu(m) * (L1(d, m) - L2(d, m)).
+				// Computation of difference g(m) * (L1(d, m) - L2(d, m)).
 				int64_t T2(0);
 				// Contribution of m s.t. a0(m - m0) + r0 != 0 mod q.
 				T2 += sigma[r0];
@@ -395,10 +395,10 @@ namespace CompPsi
 				T2 += Special0A(G, q, a0, a0_inv, r0, b, Q, sgn_beta, sgn_delta);
 
 				int64_t sum_LmL1(0), sum_L1mL2(0);
-				for (int m = 0; m < 2 * b; m++)
+				for (int m = -b; m < b; m++)
 				{
-					sum_LmL1 += g[m_index + m] * (L(d, m) - L1(d, m));
-					sum_L1mL2 += g[m_index + m] * (L1(d, m) - L2(d, m));
+					sum_LmL1 += g(m) * (L(d, m) - L1(d, m));
+					sum_L1mL2 += g(m) * (L1(d, m) - L2(d, m));
 				}
 				if (T1 != sum_LmL1 || T2 != sum_L1mL2)
 				{
@@ -413,7 +413,7 @@ namespace CompPsi
 					}
 					//continue;
 				}
-				S += (sum_LmL1 + sum_L1mL2) * f[d_index + d].numerical();
+				S += (sum_LmL1 + sum_L1mL2) * f(d).numerical();
 			}
 		}
 		std::cout << d0 - a << " " << d0 + a << " " << m0 - b << " " << m0 + b << std::endl;//": " << S << std::endl;
@@ -445,18 +445,24 @@ namespace CompPsi
 								   std::vector<Log> f, std::vector<int> g, int64_t N)
 	{
 		float_dec_100 S(0);
-
-		for (int64_t mm = m0; mm < m1; mm += 2 * a)
+		int64_t mm = m0, dm = d0;
+		for (int64_t dm = d0; dm < d1; dm += 2 * a)
 		{
-			int64_t mp = std::min(mm + 2 * a, m1);
-			int64_t m_mid = (mm + mp) / 2, m_len = (mp - mm) / 2;
-			int64_t m_index = mm - m0;
-			for (int64_t dm = d0; dm < d1; dm += 2 * b)
+			int64_t dp = std::min(dm + 2 * a, d1);
+			int64_t d_mid = (dm + dp) / 2, d_len = (dp - dm) / 2;
+			std::function<Log(int)> f_ = [f, d0, dm, d_len](int d)
+				{
+					return f[d + dm - d0 + d_len];
+				};
+			for (int64_t mm = m0; mm < m1; mm += 2 * b)
 			{
-				int64_t dp = std::min(dm + 2 * a, d1);
-				int64_t d_mid = (dm + dp) / 2, d_len = (dp - dm) / 2;
-				int64_t d_index = dm - d0;
-				S += SumByLinAppr(f, g, N, d_mid, m_mid, d_len, m_len, d_index, m_index);
+				int64_t mp = std::min(mm + 2 * b, m1);
+				int64_t m_mid = (mm + mp) / 2, m_len = (mp - mm) / 2;
+				std::function<int(int)> g_ = [g, m0, mm, m_len](int m)
+					{
+						return g[m + mm - m0 + m_len];
+					};
+				S += SumByLinAppr(f_, g_, N, d_mid, m_mid, d_len, m_len);
 			}
 		}
 		return S;
