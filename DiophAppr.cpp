@@ -22,18 +22,17 @@ namespace Elementary
 			int64_t a(alpha); // a = floor(alpha).
 			int64_t new_p = a * p[1] + p[0];
 			int64_t new_q = a * q[1] + q[0];
-			if (std::abs(alpha - a) < epsilon && new_q <= Q)
-			{
-				return std::make_tuple(sgn_alpha * new_p, (sgn_alpha * s * q[0]) % new_q, new_q, 0);
-			}
-
 			p[0] = p[1]; p[1] = new_p;
 			q[0] = q[1]; q[1] = new_q;
 
+			if (std::abs(alpha - a) < epsilon && new_q <= Q)
+			{
+				return std::make_tuple(sgn_alpha * new_p, (-sgn_alpha * s * q[0]) % new_q, new_q, 0);
+			}
 			alpha = 1 / (alpha - a);
 			s *= -1;
 		}
 		// As q[1] > Q, we resort to the previous approximation, i.e. pm / qm.
-		return std::make_tuple(sgn_alpha * p[0], (sgn_alpha * s * q[1]) % q[0], q[0], sgn_alpha * s);
+		return std::make_tuple(sgn_alpha * p[0], (-sgn_alpha * s * q[1]) % q[0], q[0], sgn_alpha * s);
 	}
 }
