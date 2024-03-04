@@ -125,12 +125,17 @@ namespace Types
 
 		void Shift(int64_t a)
 		{
-			start += a;
-			end += a;
+			if (start != LLONG_MIN && start != LLONG_MAX)
+			{
+				start += a;
+			}
+			if (end != LLONG_MIN && end != LLONG_MAX)
+			{
+				end += a;
+			}
 		}
 
-		// Intersects this interval with another one.
-		// Result is stored in this object.
+		// Intersects this interval with I.
 		void Intersect(Interval I)
 		{
 			start = std::max(start, I.start);
@@ -172,14 +177,14 @@ namespace Types
 	// Primefactors can be added individually.
 	struct Factorization
 	{
-	private:
+		private:
 		std::vector<PrimeFactor> primeFactors_;
 
 		// Product of the prime factors which have been added
 		// with corresponding parameter 'update_n' equal to true.
 		int64_t n_;
 
-	public:
+		public:
 		// Constructor
 		Factorization() : n_(1) {};
 
@@ -195,6 +200,125 @@ namespace Types
 		operator std::string();
 	};
 
+	struct Fraction
+	{
+		public:
+		int64_t num;
+		int64_t denom;
+
+		Fraction(int64_t num, int64_t denom) : num(num), denom(denom)
+		{};
+
+		Fraction(int64_t num) : num(num), denom(1)
+		{};
+
+		double numerical() const
+		{
+			if (denom != 0)
+			{
+				return (double)num / denom;
+			}
+			return 1;
+		};
+
+		int64_t Floor() const
+		{
+			if (num < 0 && num % denom != 0)
+			{
+				return (num / denom) - 1;
+			}
+			return num / denom;
+		}
+
+		bool IsIntegral() const
+		{
+			return num % denom == 0;
+		}
+
+		bool IsNegative() const
+		{
+			if (denom > 0)
+			{
+				return num < 0;
+			}
+			else return num > 0;
+		}
+
+		bool IsZero() const
+		{
+			return num == 0;
+		}
+
+		int Sign() const
+		{
+			if (IsNegative())
+			{
+				return -1;
+			}
+			else if (IsZero())
+			{
+				return 0;
+			}
+			return 1;
+		}
+
+		Fraction operator*(Fraction f)
+		{
+			return Fraction(num * f.num, denom * f.denom);
+		};
+
+		Fraction operator+(Fraction f)
+		{
+			return Fraction(num * f.denom + f.num * denom,
+							denom * f.denom);
+		};
+
+		Fraction operator-(Fraction f)
+		{
+			return Fraction(num * f.denom - f.num * denom, 
+							denom * f.denom);
+		};
+
+		Fraction operator/(Fraction f)
+		{
+			return Fraction(num * f.denom, denom * f.num);
+		};
+
+		void Invert()
+		{
+			int64_t num_temp = num;
+			num = denom;
+			denom = num_temp;
+
+		};
+
+		void Negate()
+		{
+			num *= -1;
+		}
+
+		// Fractional part; i.e., num/denom - floor(num/denom).
+		Fraction FractionalPart()
+		{
+			int64_t temp_num = num % denom;
+			if (temp_num < 0)
+			{
+				temp_num += denom;
+			}
+			return Fraction(temp_num, denom);
+		};
+
+		private:
+		// Makes sure that denominator stays positive.
+		void Normalize()
+		{
+			if (denom < 0)
+			{
+				num *= -1;
+				denom *= -1;
+			}
+		}
+	};
 	/*
 	// Structure to store the prime divisors of an integer.
 	struct SqFreeFactorization

@@ -49,7 +49,7 @@ namespace Elementary
 		// Returns a tuple (p, p', q, s) of integers so that abs(alpha - p/q) <= 1/(qQ)
 		// with gcd(p, q) = 1, q <= Q, and pp' = 1 mod q, while s = sgn(alpha - p/q).
 		// Algorithm taken from a published paper from 2023 by H. A. Helfgott and L. Thompson.
-		static std::tuple<int64_t, int64_t, int64_t, int> ApprByRedFrac(double alpha, int64_t Q);
+		static std::tuple<int64_t, int64_t, int64_t, int> ApprByRedFrac(Fraction alpha, int64_t Q);
 	};
 
 	// Returns the first integer k >= n congruent to a modulo q.
