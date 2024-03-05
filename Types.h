@@ -7,6 +7,7 @@
 #include <functional>
 #include <string>
 #include <algorithm>
+#include <numeric>
 
 #include <boost/icl/interval.hpp>
 #include <boost/icl/interval_set.hpp>
@@ -23,7 +24,7 @@ typedef std::vector<Tuple> Tuples;
 // Boost library shortcut typenames.
 //using interval = boost::icl::interval<int>;
 //using interval_set = boost::icl::interval_set<int>;
-using float_dec_100 = boost::multiprecision::cpp_dec_float_50;
+using float_dec_100 = boost::multiprecision::cpp_dec_float_100;
 using complex_128 = boost::multiprecision::complex128;
 
 using namespace boost::multiprecision;
@@ -117,8 +118,18 @@ namespace Types
 				}
 				else if (a > 0)
 				{
-					start = std::floor((double)(-b - Q) / (2 * a)) + 1;
-					end = std::ceil((double)(-b + Q) / (2 * a)) - 1;
+					// We have to distinguish the possibilities of D being a square or not;
+					// for certain values of a and b this results in a different integer interval.
+					if (Q * Q != D)
+					{
+						start = std::ceil((double)(-b - Q) / (2 * a));
+						end = std::floor((double)(-b + Q) / (2 * a));
+					}
+					else
+					{
+						start = std::floor((double)(-b - Q) / (2 * a)) + 1;
+						end = std::ceil((double)(-b + Q) / (2 * a)) - 1;
+					}
 				}
 			}
 		};
@@ -207,7 +218,9 @@ namespace Types
 		int64_t denom;
 
 		Fraction(int64_t num, int64_t denom) : num(num), denom(denom)
-		{};
+		{
+			Normalize();
+		};
 
 		Fraction(int64_t num) : num(num), denom(1)
 		{};
@@ -309,7 +322,8 @@ namespace Types
 		};
 
 		private:
-		// Makes sure that denominator stays positive.
+		// Makes sure that denominator stays positive,
+		// also reduces fraction if possible.
 		void Normalize()
 		{
 			if (denom < 0)
@@ -317,6 +331,10 @@ namespace Types
 				num *= -1;
 				denom *= -1;
 			}
+
+			int64_t d = std::_Gcd(num, denom);
+			num /= d;
+			denom /= d;
 		}
 	};
 	/*

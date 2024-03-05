@@ -335,20 +335,18 @@ namespace CompPsi
 		Fraction alpha2 = Fraction(-N, d0 * m0 * m0);
 
 		/*
-		std::function<int(int, int)> L = [N, d0, m0, a, b](int d, int m)
+		std::function<int64_t(int64_t, int64_t)> L = [N, d0, m0](int64_t d, int64_t m)
 			{
-				return N / ((d + d0 - a) * (m + m0 - b));
+				return N / ((d + d0) * (m + m0));
 			};
-		std::function<int(int, int)> L1 = [alpha0, alpha1, alpha2, a, b](int d, int m)
+		std::function<int64_t(int64_t, int64_t)> L1 = [N, d0, m0](int64_t d, int64_t m)
 			{
-				return std::floor(alpha0 + alpha1 * (d - a) + alpha2 * (m - b));
+				return std::floor((double)N / (d0 * m0) - (double)N/(d0 * d0 * m0) * d - (double)N/(d0 * m0 * m0) * m);
 			};
-		std::function<int(int, int)> L2 = [alpha0, alpha1, alpha2, a, b](int d, int m)
+		std::function<int64_t(int64_t, int64_t)> L2 = [N, d0, m0](int64_t d, int64_t m)
 			{
-				return std::floor(alpha0 + alpha1 * (d - a)) + std::floor(alpha2 * (m - b));
-			};
-		std::vector<Log> Lambda = Elementary::sieve.LambdaSegmented(d0 - a, 2 * a);
-		std::vector<int> mu = Elementary::sieve.MuSegmented(m0 - b, 2 * b);*/
+				return std::floor((double)N / (d0 * m0) - (double)N / (d0 * d0 * m0) * d) + std::floor(-(double)N / (d0 * m0 * m0) * m);
+			};*/
 
 		float_dec_100 S = LinearSum(f, g, a, b, alpha0, alpha1, alpha2);
 
@@ -369,9 +367,9 @@ namespace CompPsi
 
 		for (int64_t d = -a; d < a; d++)
 		{
-			if (f(d) != 0) // I.e., f(d) is non-zero.
+			if (true || f(d) != 0) // I.e., f(d) is non-zero.
 			{
-				Fraction R0 = alpha0 + alpha1 * Fraction(d - a);
+				Fraction R0 = alpha0 + alpha1 * Fraction(d);
 				Fraction R0_frac = R0.FractionalPart();
 				int64_t r0 = (R0_frac * q + Fraction(1, 2)).Floor();
 				int64_t d_ = d0 + d;
@@ -381,8 +379,7 @@ namespace CompPsi
 				double Q(1);
 				if (!delta.IsZero())
 				{
-					Fraction Q_ = beta / delta;
-					Q = Q_.numerical();
+					Q = (beta / delta).numerical();
 				}
 
 				// Computation of difference g(m) * (L(d, m) - L1(d, m)) for m : a0(m - m0) + r0 = 0, -1 mod q.
@@ -413,29 +410,32 @@ namespace CompPsi
 				// Contribution of m s.t. a0(m - m0) + r0 = 0 mod q.
 				T2 += Special0A<Tg>(G, q, a0, a0_inv, r0, b, Q, sgn_beta, sgn_delta);
 
-				/*int64_t sum_LmL1(0), sum_L1mL2(0);
+				/*
+				Tg sum_LmL1(0), sum_L1mL2(0);
 				for (int m = -b; m < b; m++)
 				{
 					sum_LmL1 += g(m) * (L(d, m) - L1(d, m));
 					sum_L1mL2 += g(m) * (L1(d, m) - L2(d, m));
 				}
-				if (T1 != sum_LmL1 || T2 != sum_L1mL2)
+				if (T1 - sum_LmL1 > 0.01 || T1 - sum_LmL1 < -0.01 || T2 - sum_L1mL2 > 0.01 || T2 - sum_L1mL2 < -0.01)
 				{
-					//d--;
-					if (T1 != sum_LmL1)
+					d--;
+					if (T1 - sum_LmL1 > 0.01 || T1 - sum_LmL1 < -0.01)
 					{
-						int i = 0;
+						//std::cout << "d: " << d0 + d << ", m: " << m0 - b << " -- " << m0 + b - 1 << std::endl;
+						std::cout << "T1: " << T1 << ", sum_LmL1: " << sum_LmL1 << std::endl;
 					}
-					if (T2 != sum_L1mL2)
+					if (T2 - sum_L1mL2 > 0.01 || T2 - sum_L1mL2 < -0.01)
 					{
-						int i = 0;
+						//std::cout << "d: " << d0 + d << ", m: " << m0 - b << " -- " << m0 + b - 1 << std::endl;
+						std::cout << "T2: " << T2 << ", sum_L1mL2: " << sum_L1mL2 << std::endl;
 					}
-					//continue;
+					continue;
 				}*/
 				S += (T1 + T2) * f(d);
 			}
 		}
-		std::cout << d0 - a << " " << d0 + a << " " << m0 - b << " " << m0 + b << std::endl;//": " << S << std::endl;
+		//std::cout << d0 - a << " " << d0 + a << " " << m0 - b << " " << m0 + b << std::endl;//": " << S << std::endl;
 		return S;
 	}
 
@@ -534,20 +534,20 @@ namespace CompPsi
 				switch (comp_mode)
 				{
 					case LINEAR_APPR:
-						std::cout << "Lin-appr: " << d0 << " " << d1 << " " << m0 << " " << m1 << std::endl;
+						//std::cout << "Lin-appr: " << d0 << " " << d1 << " " << m0 << " " << m1 << std::endl;
 						S += DoubleSum(d0, d1, m0, m1, a, b, L_d, m_m, N);
 						if (diag_mode == NON_DIAG)
 						{
-							std::cout << "Lin-appr: " << m0 << " " << m1 << " " << d0 << " " << d1 << std::endl;
+							//std::cout << "Lin-appr: " << m0 << " " << m1 << " " << d0 << " " << d1 << std::endl;
 							S += DoubleSum<int64_t, float_dec_100>(d0, d1, m0, m1, a, b, m_d, L_m, N);
 						}
 						break;
 					case BRUTE_FORCE:
-						std::cout << "Brute-force: " << d0 << " " << d1 << " " << m0 << " " << m1 << std::endl;
+						//std::cout << "Brute-force: " << d0 << " " << d1 << " " << m0 << " " << m1 << std::endl;
 						S += BruteDoubleSum(d0, d1, m0, m1, Lambda_d, mu_m, N);
 						if (diag_mode == NON_DIAG)
 						{
-							std::cout << "Brute-force: " << m0 << " " << m1 << " " << d0 << " " << d1 << std::endl;
+							//std::cout << "Brute-force: " << m0 << " " << m1 << " " << d0 << " " << d1 << std::endl;
 							S += BruteDoubleSum(m0, m1, d0, d1, Lambda_m, mu_d, N);
 						}
 						break;
