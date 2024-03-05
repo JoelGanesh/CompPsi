@@ -61,7 +61,7 @@ namespace CompPsi
 				float_dec_100 k(temp);
 				result += mu[d - 1] * boost::multiprecision::lgamma(k + 1);
 			}
-			std::cout << "PsiPrep: " << result << std::endl;
+			//std::cout << "PsiPrep: " << result << std::endl;
 			return result;
 		}
 

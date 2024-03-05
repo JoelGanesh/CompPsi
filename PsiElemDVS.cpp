@@ -12,8 +12,7 @@ namespace CompPsi
 		int64_t M = std::sqrt(N);
 		int64_t M0 = std::max(1, (int)(std::pow(N, 0.4) * std::pow(std::log(std::log(N)) / std::log(N), 0.6)));
 		
-		return IndependentVar(N, M);
-		//return DependentVar(N, M, M0) + IndependentVar(N, M0);
+		return DependentVar(N, M, M0) + IndependentVar(N, M0);
 	}
 
 	float_dec_100 PsiElem::DependentVar(int64_t N, int64_t M, int64_t M0)
@@ -78,7 +77,7 @@ namespace CompPsi
 				}
 			}
 		}
-		std::cout << "DV: " << sum << std::endl;
+		//std::cout << "DV: " << sum << std::endl;
 		return sum;
 	}
 

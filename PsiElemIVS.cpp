@@ -557,11 +557,13 @@ namespace CompPsi
 		return S;
 	}
 
-	float_dec_100 PsiElem::IndependentVar(int64_t N, int64_t M0) // Returns sum_{mdk <= N, m,d <= M0} Lambda(m)mu(d) = sum_{m,d <= M0} Lambda(m)mu(d)floor(N/md).
+	// Returns sum_{mdk <= N, m,d <= M0} Lambda(m)mu(d) = sum_{m,d <= M0} Lambda(m)mu(d)floor(N/md).
+	// Based on algorithm by Helfgott & Thompson, 2023.
+	float_dec_100 PsiElem::IndependentVar(int64_t N, int64_t M0)
 	{
 		float_dec_100 S(0);
 		int64_t A1 = M0 + 1, B1 = M0 + 1;
-		int64_t C = 1, D = 2; // Hand-tuned by Helfgott & Thompson, 2023. TODO: Change back to C = 10, D = 8.
+		int64_t C = 10, D = 8; // Hand-tuned by Helfgott & Thompson, 2023.
 
 		while (A1 >= 2 * std::pow(6 * C * C * C * N, 0.25) &&
 			   A1 >= std::sqrt(M0) + 1 &&
@@ -580,7 +582,7 @@ namespace CompPsi
 				int64_t D = (1 + M0 / std::max(2 * a, 2 * b)) * std::max(2 * a, 2 * b);
 
 				DIAG_MODE diag_mode = (A == B && A1 == B1) ? DIAGONAL : NON_DIAG;
-				std::cout << "REGION: " << A << " " << A1 << ", " << B << " " << B1 << std::endl;
+				//std::cout << "REGION: " << A << " " << A1 << ", " << B << " " << B1 << std::endl;
 				S += DDSum(A, A1, B, B1, N, D, LINEAR_APPR, a, b, diag_mode);
 
 				B1 = B;
@@ -588,17 +590,17 @@ namespace CompPsi
 
 
 			// Remaining part is done by brute force.
-			std::cout << "REGION: " << A << " " << A1 << ", " << "1" << " " << B1 << std::endl;
+			//std::cout << "REGION: " << A << " " << A1 << ", " << "1" << " " << B1 << std::endl;
 			S += DDSum(A, A1, 1, B1, N, std::sqrt(M0) + 1, BRUTE_FORCE, 0, 0, NON_DIAG);
 			A1 = A;
 			B1 = A;
 		}
 
 		// The remaining rectangle is done again by brute force.
-		std::cout << "REGION: " << "1" << " " << A1 << ", " << "1" << " " << B1 << std::endl;
+		//std::cout << "REGION: " << "1" << " " << A1 << ", " << "1" << " " << B1 << std::endl;
 		S += DDSum(1, A1, 1, B1, N, std::sqrt(M0) + 1, BRUTE_FORCE, 0, 0, DIAGONAL);
 
-		std::cout << "IV: " << S << std::endl;
+		//std::cout << "IV: " << S << std::endl;
 		return S;
 	}
 }
