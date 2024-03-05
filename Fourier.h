@@ -42,7 +42,7 @@ namespace Fourier
 			// Apply the inverse DFT, remove allocated memory for Fv. The resulting vector should still be normalized.
 			std::vector<RR> v = IFFT(Fv);
 			DestructContainer(Fv);
-			Utility::IO::Print(v);
+			//Utility::IO::Print(v);
 			for (size_t i = 0; i < v.size(); i++)
 			{
 				v[i] /= size;
@@ -193,19 +193,19 @@ namespace Fourier
 
 		void Multiply(std::vector<Complex>& Fv, std::vector<Complex> Fv_i) override
 		{
-			std::function<std::string(Complex)> g = [](Complex z) { return std::string(z); };
-			std::cout << "Fv: ";
-			Utility::IO::Print(Utility::Generic::Map(Fv, g));
-			std::cout << std::endl << "Fv_i: ";
-			Utility::IO::Print(Utility::Generic::Map(Fv_i, g));
+			//std::function<std::string(Complex)> g = [](Complex z) { return std::string(z); };
+			//std::cout << "Fv: ";
+			//Utility::IO::Print(Utility::Generic::Map(Fv, g));
+			//std::cout << std::endl << "Fv_i: ";
+			//Utility::IO::Print(Utility::Generic::Map(Fv_i, g));
 
 			for (int j = 0; j < size; j++)
 			{
 				Fv[j] *= Fv_i[j]; // Multiplication is defined in struct Complex (in Types.h)
 			}
-			std::cout << std::endl << "Fv: ";
-			Utility::IO::Print(Utility::Generic::Map(Fv, g));
-			std::cout << std::endl;
+			//std::cout << std::endl << "Fv: ";
+			//Utility::IO::Print(Utility::Generic::Map(Fv, g));
+			//std::cout << std::endl;
 		}
 
 		std::vector<Complex> FFT(std::vector<float_dec_100> v) override

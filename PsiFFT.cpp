@@ -10,41 +10,41 @@
 
 namespace CompPsi
 {
-	float_dec_100 PsiFFT::Psi0(int64_t N)
-	{
-		Elementary::SegmentationArray<float_dec_100> segmentationArray(N);
-		const int S = N * (pow(8, 1.0 / std::sqrt(N)) - 1);
-		float_dec_100 result = SegmentationFFT(N, segmentationArray) - SegmentationError(N, S, segmentationArray); // mu[z] defined -> mu.size() = z+1.
-		std::cout << "Psi0: " << result << std::endl;
-		return result;
-	}
+    float_dec_100 PsiFFT::Psi0(int64_t N)
+    {
+        Elementary::SegmentationArray<float_dec_100> segmentationArray(N);
+        const int S = N * (pow(2, 3 * segmentationArray.getDelta()) - 1);
+        float_dec_100 result = SegmentationFFT(N, segmentationArray) - SegmentationError(N, S, segmentationArray); // mu[z] defined -> mu.size() = z+1.
+        //std::cout << "Psi0: " << result << std::endl;
+        return result;
+    }
 
-	float_dec_100 PsiFFT::SegmentationFFT(const int64_t N, Elementary::SegmentationArray<float_dec_100> segmArray) // Returns sum_{k1+...+k4 <= k} Mu_z[k1]Mu_z[k2]One[k3]Log[k4] using FFT algorithm. F[j] is the j-th index of the segmentation of f and k = floor(log2(n)/delta).
-	{
-		std::vector<float_dec_100> segmentedMu = segmArray.Mu_M();
-		std::vector<float_dec_100> segmentedOne = segmArray.One();
-		std::vector<float_dec_100> segmentedLambda = segmArray.Lambda_M();
-		std::vector<std::vector<float_dec_100>> segments{ segmentedMu, segmentedOne, segmentedLambda };
-		for (int i = 0; i < 3; i++)
-		{
-			Utility::IO::Print(segments[i]);
-		}
+    float_dec_100 PsiFFT::SegmentationFFT(const int64_t N, Elementary::SegmentationArray<float_dec_100> segmArray) // Returns sum_{k1+...+k4 <= k} Mu_z[k1]Mu_z[k2]One[k3]Log[k4] using FFT algorithm. F[j] is the j-th index of the segmentation of f and k = floor(log2(n)/delta).
+    {
+        std::vector<float_dec_100> segmentedMu = segmArray.Mu_M();
+        std::vector<float_dec_100> segmentedOne = segmArray.One();
+        std::vector<float_dec_100> segmentedLambda = segmArray.Lambda_M();
+        std::vector<std::vector<float_dec_100>> segments{ segmentedMu, segmentedOne, segmentedLambda };
+        //for (int i = 0; i < 3; i++)
+        //{
+        //    Utility::IO::Print(segments[i]);
+        //}
 
-		int64_t size = segmentedMu.size(); // Note: sizes of the segments are equal.
-		Fourier::FFTSimple FFTLib(size, 3); // The parameter 3 represents the number of arrays to be convoluted.
-		std::vector<float_dec_100> segmentation = FFTLib.Convolve(segments);
-		Utility::IO::Print(segmentation);
-		//cout << "S: ";
-		//Print(segmentation);
-		float_dec_100 sum = 0;
-		for (size_t k = 0; k < size; k++)
-		{
-			sum += segmentation[k];
-		}
+        int64_t size = segmentedMu.size(); // Note: sizes of the segments are equal.
+        Fourier::FFTSimple FFTLib(size, 3); // The parameter 3 represents the number of arrays to be convoluted.
+        std::vector<float_dec_100> segmentation = FFTLib.Convolve(segments);
+        //Utility::IO::Print(segmentation);
+        //cout << "S: ";
+        //Print(segmentation);
+        float_dec_100 sum = 0;
+        for (size_t k = 0; k < size; k++)
+        {
+            sum += segmentation[k];
+        }
 
-		std::cout << "PsiFFTSegmentation: " << sum << std::endl;
-		return sum;
-	}
+        //std::cout << "PsiFFTSegmentation: " << sum << std::endl;
+        return sum;
+    }
 
 	float_dec_100 PsiFFT::SegmentationError(const int64_t N, const int64_t S, Elementary::SegmentationArray<float_dec_100> segmArray) // Calculates error term sum_{d1d2d3d4 > N, k(d1)+...+k(d4) <= k} mu_z(d1)mu_z(d2)log(d_4), where k(m) = floor(log2(m)/delta), k = k(N).
 	{
@@ -57,11 +57,11 @@ namespace CompPsi
 		std::vector<int> segmentMu = Elementary::sieve.MuSegmented(1, M + 1);
 		std::vector<Log> segmentLambda = Elementary::sieve.LambdaSegmented(1, M + 1);
 
-		float_dec_100 error = 0;
-		for (size_t n = N + 1; n <= N + S; n++)
-		{
-			Factorization factorization = factorizations[n - (N + 1)];
-			std::cout << std::string(factorization) << std::endl;
+        float_dec_100 error = 0;
+        for (int64_t n = N + 1; n <= N + S; n++)
+        {
+            Factorization factorization = factorizations[n - (N + 1)];
+            //std::cout << std::string(factorization) << std::endl;
 
 			Tuple v{ 1, INT_MAX, INT_MAX }; // First entry corresponds with mu. We take ones for mu_z since mu_z(n) = 0 whenever p^2 divides n for some prime p.
 			std::vector<Tuples> subfactorizations = PsiFFT::SubFactorizations(v, factorization);
@@ -133,19 +133,19 @@ namespace CompPsi
 			}
 		}
 
-		std::cout << "PsiFFTError: " << error << std::endl;
-		return error;
-	}
-	
-	std::vector<Tuples> PsiFFT::SubFactorizations(Tuple v, Factorization factorization) // List of non-negative integer tuples (a_i)_i for each maximal primepower p^k dividing n such that sum_i a_i = k, while a_i <= v_i
-	{
-		std::vector<Tuples> subfactorizations;
-		std::vector<PrimeFactor> primeFactors = factorization.primeFactors();
-		for (PrimeFactor primeFactor : primeFactors)
-		{
-			int k = primeFactor.exponent;
-			subfactorizations.push_back(Utility::Indexation::RestrictedTuples(k, v));
-		}
-		return subfactorizations;
-	}
+        //std::cout << "PsiFFTError: " << error << std::endl;
+        return error;
+    }
+    
+    std::vector<Tuples> PsiFFT::SubFactorizations(Tuple v, Factorization factorization) // List of non-negative integer tuples (a_i)_i for each maximal primepower p^k dividing n such that sum_i a_i = k, while a_i <= v_i
+    {
+        std::vector<Tuples> subfactorizations;
+        std::vector<PrimeFactor> primeFactors = factorization.primeFactors();
+        for (PrimeFactor primeFactor : primeFactors)
+        {
+            int k = primeFactor.exponent;
+            subfactorizations.push_back(Utility::Indexation::RestrictedTuples(k, v));
+        }
+        return subfactorizations;
+    }
 }
