@@ -178,12 +178,12 @@ namespace CompPsi
 	// Computation of L - L1 for a0(m-m0) + r0 = -1 mod q, with q > 1.
 	template <typename T>
 	static T Special1(std::vector<T> G, int64_t N, int64_t q, int64_t a, int64_t a_inv,
-								  Fraction R0, int64_t r0, int64_t m0, int64_t d, int64_t b)
+								  int64_t R0, int64_t r0, int64_t m0, int64_t d, int64_t b)
 	{
 		// Note that a0m + r0 = -1 mod q iff m = r mod q, with r = (-1 - r0) * a_inv.
 		int64_t r = a_inv * (-1 - r0);
 
-		int64_t gamma1 = d * (-R0.Floor() * q - (r0 + 1) + a * m0);
+		int64_t gamma1 = d * (-R0 * q - (r0 + 1) + a * m0);
 		Interval J(-a * d, gamma1, N * q); J.Shift(-m0);
 
 		// J is actually the complement of the set we are trying to sum over.
@@ -195,7 +195,7 @@ namespace CompPsi
 	// Algorithm by Helfgott & Thompson, 2023. Some comments are added for clarity.
 	template <typename T>
 	static T Special0B(std::vector<T> G, int64_t N, int64_t q, int64_t a, int64_t a_inv,
-					   Fraction R0, int64_t r0, int64_t m0, int64_t d, int64_t b, double Q, int s_beta, int s_delta)
+					   int64_t R0, int64_t r0, int64_t m0, int64_t d, int64_t b, double Q, int s_beta, int s_delta)
 	{
 		Interval I;
 		if (s_delta > 0)
@@ -211,7 +211,7 @@ namespace CompPsi
 			I = Interval(MINFTY, INFTY);
 		}
 
-		int64_t gamma1 = d * (-R0.Floor() * q - r0 + a * m0);
+		int64_t gamma1 = d * (-R0 * q - r0 + a * m0);
 		Interval J(-a * d, gamma1, N * q); J.Shift(-m0);
 
 		// J is actually the complement of the set J' we want; we try to sum over I \cap J'.
@@ -224,7 +224,7 @@ namespace CompPsi
 	// Algorithm by Helfgott & Thompson, 2023. Some comments are added for clarity.
 	template <typename T>
 	static T Special00(std::vector<T> G, int64_t N, int64_t q, int64_t a, int64_t a_inv,
-					   Fraction R0, int64_t r0, int64_t m0, int64_t d, int64_t b, double Q, int s_delta)
+					   int64_t R0, int64_t r0, int64_t m0, int64_t d, int64_t b, double Q, int s_delta)
 	{
 		Interval I, I_c(MINFTY, INFTY);
 		if (s_delta > 0)
@@ -243,12 +243,12 @@ namespace CompPsi
 		{
 			if (a != 0)
 			{
-				int64_t gamma1 = d * (-R0.Floor() - (r0 + j) + a * m0);
+				int64_t gamma1 = d * (-R0 - (r0 + j) + a * m0);
 				J[j] = Interval(-a * d, gamma1, N); J[j].Shift(-m0);
 			}
 			else
 			{
-				J[j] = Interval(N / (d * (R0.Floor() + r0 + j)) - m0 + 1, INFTY);
+				J[j] = Interval(N / (d * (R0 + r0 + j)) - m0 + 1, INFTY);
 				//J[j] = Interval(MINFTY, N / (d * ((int64_t)std::floor(R0) + r0 + j)) - m0);
 			}
 		}
@@ -341,11 +341,11 @@ namespace CompPsi
 			};
 		std::function<int64_t(int64_t, int64_t)> L1 = [N, d0, m0](int64_t d, int64_t m)
 			{
-				return std::floor((double)N / (d0 * m0) - (double)N/(d0 * d0 * m0) * d - (double)N/(d0 * m0 * m0) * m);
+				return std::floor((double)(N * (d0 * m0 - d * m0 - m * d0)) / (d0 * d0 * m0 * m0));
 			};
 		std::function<int64_t(int64_t, int64_t)> L2 = [N, d0, m0](int64_t d, int64_t m)
 			{
-				return std::floor((double)N / (d0 * m0) - (double)N / (d0 * d0 * m0) * d) + std::floor(-(double)N / (d0 * m0 * m0) * m);
+				return (N * (d0 * m0 - d * m0)) / (d0 * d0 * m0 * m0) + std::floor((double)(-(N * m)) / (d0 * m0 * m0));
 			};*/
 
 		float_dec_100 S = LinearSum(f, g, a, b, alpha0, alpha1, alpha2);
@@ -367,13 +367,19 @@ namespace CompPsi
 
 		for (int64_t d = -a; d < a; d++)
 		{
-			if (true || f(d) != 0) // I.e., f(d) is non-zero.
+			if (f(d) != 0) // I.e., f(d) is non-zero.
 			{
+				//int64_t R0_num = N * (d0 - d);
+				//int64_t R0_denom = d0 * d0 * m0;
+				//int64_t R0 = R0_num / R0_denom;
 				Fraction R0 = alpha0 + alpha1 * Fraction(d);
+				//double R0_frac = R0 - R0.Floor();
 				Fraction R0_frac = R0.FractionalPart();
-				int64_t r0 = (R0_frac * q + Fraction(1, 2)).Floor();
+
+				//int64_t R0_frac_num = R0_num % R0_denom;
+				int64_t r0 = (R0_frac * q + Fraction(1, 2)).Floor(); // (2 * q * R0_frac_num + R0_denom) / (2 * R0_denom);
 				int64_t d_ = d0 + d;
-				Fraction beta = R0_frac - Fraction(r0, q);
+				Fraction beta = R0_frac - Fraction(r0, q);//Fraction(R0_frac_num, R0_denom) - Fraction(r0, q);
 				int sgn_beta = beta.Sign();
 
 				double Q(1);
@@ -388,14 +394,14 @@ namespace CompPsi
 				if (q > 1)
 				{
 					// Account for case a0(m - m0) + r0 = -1 mod q.
-					T1 += Special1<Tg>(G, N, q, a0, a0_inv, R0, r0, m0, d_, b);
+					T1 += Special1<Tg>(G, N, q, a0, a0_inv, R0.Floor(), r0, m0, d_, b);
 
 					// Account for case a0(m - m0) + r0 = 0 mod q.
-					T1 += Special0B<Tg>(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_beta, sgn_delta);
+					T1 += Special0B<Tg>(G, N, q, a0, a0_inv, R0.Floor(), r0, m0, d_, b, Q, sgn_beta, sgn_delta);
 				}
 				else // Case q = 1.
 				{
-					T1 += Special00<Tg>(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_delta);
+					T1 += Special00<Tg>(G, N, q, a0, a0_inv, R0.Floor(), r0, m0, d_, b, Q, sgn_delta);
 				}
 
 				// Computation of difference g(m) * (L1(d, m) - L2(d, m)).

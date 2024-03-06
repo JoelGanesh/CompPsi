@@ -7,6 +7,8 @@
 #include "Types.h"
 using namespace Types;
 
+#define DOUBLE_ERROR_THRESHOLD 1.0E-8
+
 namespace Elementary
 {
 	// Class specialized for computation of segmented sieves.
@@ -62,6 +64,44 @@ namespace Elementary
 			k += q;
 		}
 		return k;
+	}
+
+	// Returns the floor of log_p(a), assuming p >= 2.
+	// Resolves certain issues with floating-point arithmetic.
+	static int log(int64_t a, int64_t p)
+	{
+		double f = std::log(a) / std::log(p);
+		int f_floor(f);
+		if (f - f_floor > 1 - DOUBLE_ERROR_THRESHOLD)
+		{
+			// It is likely that f and f_floor are wrong
+			// due to floating-point arithmetic.
+			if (pow(p, f_floor + 1) <= a)
+			{
+				return f_floor + 1;
+			}
+		}
+		return f_floor;
+	}
+
+	// Returns p^k using an advanced technique to compute powers.
+	static int64_t pow(int64_t p, int k)
+	{
+		int64_t q = 1;
+		while (k > 0)
+		{
+			if (k % 2 == 1)
+			{
+				q *= p;
+				k--;
+			}
+			else
+			{
+				q *= q;
+				k /= 2;
+			}
+		}
+		return q;
 	}
 }
 #endif

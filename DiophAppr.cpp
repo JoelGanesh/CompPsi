@@ -1,7 +1,5 @@
 #include "Elementary.h"
 
-#define epsilon 1.0E-8
-
 namespace Elementary
 {
 	std::tuple<int64_t, int64_t, int64_t, int> DiophAppr::ApprByRedFrac(Fraction alpha, int64_t Q)

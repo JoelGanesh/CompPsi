@@ -14,7 +14,7 @@ int main()
 	CompPsi::PsiElem psiElem;
 	CompPsi::PsiFFT psiFFT;
 
-    uint64_t n = (uint64_t)(1 << 26);
+    uint64_t n = (uint64_t)(4194304);
     while (true)
     {
         //std::cin >> k;
@@ -35,11 +35,19 @@ int main()
         //Utility::IO::Print(Utility::Generic::Map(y, f));
         
         auto start = std::chrono::high_resolution_clock::now();
-        //std::cout << std::setprecision(100) << "Psi(" << n << "): " << psiFFT.Psi(n) << std::endl;
-        std::cout << std::setprecision(100) << "Psi(" << n << "): " << psiBF.Psi(n) << std::endl;
+        std::cout << std::setprecision(100) << "PsiBF(" << n << "): " << psiBF.Psi(n) << std::endl;
         auto end = std::chrono::high_resolution_clock::now();
-
         std::cout << "Computation took: " << std::setprecision(8) << (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()/1000000 << "s" << std::endl;
+
+        start = std::chrono::high_resolution_clock::now();
+        std::cout << std::setprecision(100) << "PsiFFT(" << n << "): " << psiFFT.Psi(n) << std::endl;
+        end = std::chrono::high_resolution_clock::now();
+        std::cout << "Computation took: " << std::setprecision(8) << (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000 << "s" << std::endl;
+
+        start = std::chrono::high_resolution_clock::now();
+        std::cout << std::setprecision(100) << "PsiElem(" << n << "): " << psiElem.Psi(n) << std::endl;
+        end = std::chrono::high_resolution_clock::now();
+        std::cout << "Computation took: " << std::setprecision(8) << (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000 << "s" << std::endl;
 
         n *= 2;
         //std::cout << CompPsi::PsiElem::Psi(n) << std::endl;

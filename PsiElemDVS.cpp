@@ -12,6 +12,7 @@ namespace CompPsi
 		int64_t M = std::sqrt(N);
 		int64_t M0 = std::max(1, (int)(std::pow(N, 0.4) * std::pow(std::log(std::log(N)) / std::log(N), 0.6)));
 		
+		//return IndependentVar(N, M);
 		return DependentVar(N, M, M0) + IndependentVar(N, M0);
 	}
 
@@ -39,41 +40,33 @@ namespace CompPsi
 		{
 			K1 = std::min(K1, n - M0);
 
-			// We process the two sums in separate clauses to minimize memory usage.
-			// (Local variables are garbage-collected when they become out-of-scope)
+			std::vector<int> mu = Elementary::sieve.MuSegmented(n - K1 + 1, K1);
+			std::vector<Log> Lambda = Elementary::sieve.LambdaSegmented(n - K1 + 1, K1);
+			for (int64_t i = 0; i < K1; i++)
 			{
-				std::vector<int> mu = Elementary::sieve.MuSegmented(n - K1 + 1, K1);
-				std::vector<Log> Lambda = Elementary::sieve.LambdaSegmented(n - K1 + 1, K1);
-				for (int64_t i = 0; i < K1; i++)
-				{
-					// Process (n - K1, n] by considering d = n - i, i = 0, 1, ..., K1 - 1.
-					int64_t d = n - i;
+				// Process (n - K1, n] by considering d = n - i, i = 0, 1, ..., K1 - 1.
+				int64_t d = n - i;
 
-					if (mu[K1 - i - 1] != 0)
-					{
-						sum_DLambda += SegmentSumDivSumLambda(DLambda_index, N / d, N, K2);
-						DLambda_index = N / d;
-						sum += mu[K1 - i - 1] * (sum_DLambda - sum_LambdaFl);
-					}
-					sum_LambdaFl += Lambda[K1 - i - 1].numerical() * (N / (d * d));
+				if (mu[K1 - i - 1] != 0)
+				{
+					sum_DLambda += SegmentSumDivSumLambda(DLambda_index, N / d, N, K2);
+					DLambda_index = N / d;
+					sum += mu[K1 - i - 1] * (sum_DLambda - sum_LambdaFl);
 				}
+				sum_LambdaFl += Lambda[K1 - i - 1].numerical() * (N / (d * d));
 			}
+			for (int64_t i = 0; i < K1; i++)
 			{
-				std::vector<Log> Lambda = Elementary::sieve.LambdaSegmented(n - K1 + 1, K1);
-				std::vector<int> mu = Elementary::sieve.MuSegmented(n - K1 + 1, K1);
-				for (int64_t i = 0; i < K1; i++)
+				// Process (n - K1, n] by considering m = n - i, i = 0, 1, ..., K1 - 1.
+				int64_t m = n - i;
+
+				sum_muFl += mu[K1 - i - 1] * (N / (m * m));
+				if (Lambda[K1 - i - 1].n > 1)
 				{
-					// Process (n - K1, n] by considering m = n - i, i = 0, 1, ..., K1 - 1.
-					int64_t m = n - i;
+					sum_Dmu += SegmentSumDivSumMu(Dmu_index, N / m, N, K2);
+					Dmu_index = N / m;
 
-					sum_muFl += mu[K1 - i - 1] * (N / (m * m));
-					if (Lambda[K1 - i - 1].n > 1)
-					{
-						sum_Dmu += SegmentSumDivSumMu(Dmu_index, N / m, N, K2);
-						Dmu_index = N / m;
-
-						sum += Lambda[K1 - i - 1].numerical() * (sum_Dmu - sum_muFl);
-					}
+					sum += Lambda[K1 - i - 1].numerical() * (sum_Dmu - sum_muFl);
 				}
 			}
 		}
@@ -118,8 +111,8 @@ namespace CompPsi
 		{
 			Prime p = pf.prime;
 			Exponent e = pf.exponent;
-			
-			sum += std::min(e, (int)std::floor(log(a) / log(p))) * boost::multiprecision::log(float_dec_100(p));
+		
+			sum += std::min(e, Elementary::log(a, p)) * boost::multiprecision::log(float_dec_100(p));
 		}
 		return sum;
 	}
