@@ -4,6 +4,7 @@
 #include <numeric>
 #include <functional>
 #include <boost/multiprecision/cpp_dec_float.hpp>
+//#include <boost/multiprecision/cpp_int.hpp>
 
 #define INFTY	LLONG_MAX
 #define MINFTY  LLONG_MIN
@@ -157,20 +158,26 @@ namespace CompPsi
 	// Algorithm by Helfgott & Thompson, 2023.
 	template <typename Tf, typename Tg>
 	static float_dec_100 LinearSum(std::function<Tf(int64_t)> f, std::function<Tg(int64_t)> g,
-								   int64_t a, int64_t b,
-								   Fraction alpha0, Fraction alpha1, Fraction alpha2)
+								   int64_t a, int64_t b, int64_t N, int64_t d0, int64_t m0)
 	{
 		Tf S_f0(0), S_f1(0);
 		Tg S_g0(0), S_g1(0);
 		for (int64_t d = -a; d < a; d++)
 		{
 			S_f0 += f(d);
-			S_f1 += f(d) * (alpha0 + alpha1 * Fraction(d)).Floor();
+			S_f1 += f(d) * ((N * (d0 - d)) / (d0 * d0 * m0));
 		}
 		for (int64_t m = -b; m < b; m++)
 		{
 			S_g0 += g(m);
-			S_g1 += g(m) * (alpha2 * Fraction(m)).Floor();
+			int64_t k_num = -N * m;
+			int64_t k_den = d0 * m0 * m0;
+			int64_t k = k_num / k_den;
+			if (k_num % k_den != 0)
+			{
+				k--;
+			}
+			S_g1 += g(m) * k;
 		}
 		return S_f0 * S_g1 + S_f1 * S_g0;
 	}
@@ -256,8 +263,8 @@ namespace CompPsi
 		// The intervals J[0] and J[1] are actually the complements of the sets J'[0] and J'[1] we want;
 		// we try to sum over the set (I \cap J'[0]) \sqcup (I_c \cap J'[1]).
 		// Note that (I \cap J'[0]) \sqcup (I_c \cap J'[1]) = R - (I \cap J[0]) - (I_c \cap J[1]).
-		J[0].Intersect(I); //J[0].Shift(b);
-		J[1].Intersect(I_c); //J[1].Shift(b);
+		J[0].Intersect(I);
+		J[1].Intersect(I_c);
 		return SumInter(G, 0, Interval(MINFTY, INFTY), b, q)
 			- SumInter(G, 0, J[0], b, q) - SumInter(G, 0, J[1], b, q);
 	}
@@ -330,8 +337,8 @@ namespace CompPsi
 	static float_dec_100 SumByLinAppr(std::function<Tf(int64_t)> f, std::function<Tg(int64_t)> g, int64_t N, 
 									  int64_t d0, int64_t m0, int64_t a, int64_t b)
 	{
-		Fraction alpha0 = Fraction(N, d0 * m0);
-		Fraction alpha1 = Fraction(-N, d0 * d0 * m0);
+		//Fraction alpha0 = Fraction(N, d0 * m0);
+		//Fraction alpha1 = Fraction(-N, d0 * d0 * m0);
 		Fraction alpha2 = Fraction(-N, d0 * m0 * m0);
 
 		/*
@@ -348,7 +355,7 @@ namespace CompPsi
 				return (N * (d0 * m0 - d * m0)) / (d0 * d0 * m0 * m0) + std::floor((double)(-(N * m)) / (d0 * m0 * m0));
 			};*/
 
-		float_dec_100 S = LinearSum(f, g, a, b, alpha0, alpha1, alpha2);
+		float_dec_100 S = LinearSum(f, g, a, b, N, d0, m0);
 
 		std::tuple<int64_t, int64_t, int64_t, int> tuple = Elementary::DiophAppr::ApprByRedFrac(alpha2, 2 * b);
 		int64_t a0 = std::get<0>(tuple);
@@ -369,21 +376,21 @@ namespace CompPsi
 		{
 			if (f(d) != 0) // I.e., f(d) is non-zero.
 			{
-				//int64_t R0_num = N * (d0 - d);
-				//int64_t R0_denom = d0 * d0 * m0;
-				//int64_t R0 = R0_num / R0_denom;
-				Fraction R0 = alpha0 + alpha1 * Fraction(d);
+				int64_t R0_num = N * (d0 - d);
+				int64_t R0_denom = d0 * d0 * m0;
+				int64_t R0 = R0_num / R0_denom;
+				//Fraction R0 = alpha0 + alpha1 * Fraction(d);
 				//double R0_frac = R0 - R0.Floor();
-				Fraction R0_frac = R0.FractionalPart();
+				//Fraction R0_frac = R0.FractionalPart();
 
-				//int64_t R0_frac_num = R0_num % R0_denom;
-				int64_t r0 = (R0_frac * q + Fraction(1, 2)).Floor(); // (2 * q * R0_frac_num + R0_denom) / (2 * R0_denom);
+				int64_t R0_frac_num = R0_num % R0_denom;
+				int64_t r0 = (2 * q * R0_frac_num + R0_denom) / (2 * R0_denom);
 				int64_t d_ = d0 + d;
-				Fraction beta = R0_frac - Fraction(r0, q);//Fraction(R0_frac_num, R0_denom) - Fraction(r0, q);
+				Fraction beta = Fraction(q * R0_frac_num - r0 * R0_denom, q * R0_denom);
 				int sgn_beta = beta.Sign();
 
 				double Q(1);
-				if (!delta.IsZero())
+				if (sgn_delta != 0)
 				{
 					Q = (beta / delta).numerical();
 				}
@@ -394,14 +401,14 @@ namespace CompPsi
 				if (q > 1)
 				{
 					// Account for case a0(m - m0) + r0 = -1 mod q.
-					T1 += Special1<Tg>(G, N, q, a0, a0_inv, R0.Floor(), r0, m0, d_, b);
+					T1 += Special1<Tg>(G, N, q, a0, a0_inv, R0, r0, m0, d_, b);
 
 					// Account for case a0(m - m0) + r0 = 0 mod q.
-					T1 += Special0B<Tg>(G, N, q, a0, a0_inv, R0.Floor(), r0, m0, d_, b, Q, sgn_beta, sgn_delta);
+					T1 += Special0B<Tg>(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_beta, sgn_delta);
 				}
 				else // Case q = 1.
 				{
-					T1 += Special00<Tg>(G, N, q, a0, a0_inv, R0.Floor(), r0, m0, d_, b, Q, sgn_delta);
+					T1 += Special00<Tg>(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_delta);
 				}
 
 				// Computation of difference g(m) * (L1(d, m) - L2(d, m)).

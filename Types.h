@@ -219,7 +219,7 @@ namespace Types
 
 		Fraction(int64_t num, int64_t denom) : num(num), denom(denom)
 		{
-			Normalize();
+			//Normalize();
 		};
 
 		Fraction(int64_t num) : num(num), denom(1)

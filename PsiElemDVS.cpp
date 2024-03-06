@@ -10,7 +10,7 @@ namespace CompPsi
 	float_dec_100 PsiElem::Psi0(int64_t N)
 	{
 		int64_t M = std::sqrt(N);
-		int64_t M0 = std::max(1, (int)(std::pow(N, 0.4) * std::pow(std::log(std::log(N)) / std::log(N), 0.6)));
+		int64_t M0 = std::max((int64_t)1, (int64_t)(std::pow(N, 0.4) * std::pow(std::log(std::log(N)) / std::log(N), 0.6)));
 		
 		//return IndependentVar(N, M);
 		return DependentVar(N, M, M0) + IndependentVar(N, M0);
