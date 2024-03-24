@@ -1,10 +1,3 @@
-#include <iostream>
-#include <cmath>
-#include <vector>
-#include <iomanip>
-#include <stack>
-#include <complex>
-
 #include "Elementary.h"
 #include "Utility.h"
 #include "Types.h"
@@ -16,13 +9,6 @@ namespace Elementary
 		int64_t M = this->N;
 
 		// If N is less than M, we have already stored all the necessary primes.
-		// If N is not much smaller than M, it might be benificial to just return all primes.
-		//if (N <= M / 2)
-		//{
-		//    // We return the subvector of primes consisting of all primes not larger than N.
-		//    int64_t max_index = Utility::Generic::FindIndex(primes, N);
-		//    return std::vector<Prime>(primes.begin(), primes.begin() + max_index + 1);
-		//}
 		if (M < N)
 		{
 			std::vector<bool> prime = std::vector<bool>(N - M, true); // Represents integers M+1, ..., N.
@@ -156,18 +142,19 @@ namespace Elementary
 			}
 
 			// Powers of p should be assigned a value of Log(p).
-			PrimePower q = p;
+			int128_t q = p;
 			while (q < N)
 			{
 				q *= p;
 			}
-			for (int64_t n = q; n < N + S; n *= p)
+			for (int128_t n = q; n < N + S; n *= p)
 			{
-				Lambda[n - N] = Log(p);
+				// Assuming n < N+S, n-N can be stored in an int64_t.
+				Lambda[(int64_t)(n - N)] = Log(p);
 			}
 		}
 
-		// We take into account that we missed the primes > S.
+		// We take into account that we missed the primes > sqrt(N+S).
 		for (int64_t n = N; n < N + S; n++)
 		{
 			if (large_prime[n - N])
@@ -192,17 +179,17 @@ namespace Elementary
 			{
 				break;
 			}
-			PrimePower q = p;
+			int128_t q = p;
 			Exponent j = 1;
 			while (q < N + S)
 			{
-				for (int64_t k = FirstMultipleAfter(N, q); k < N + S; k += q)
+				for (int64_t k = FirstMultipleAfter(N, (int64_t)q); k < N + S; k += (int64_t)q)
 				{
 					// If p^{j+1} does not divide k, then v_p(k) = j, so we should add the pair (p, j).
 					if (k % (p * q) != 0)
 					{
 						factorizations[k - N].AddFactor(p, j);
-						products[k - N] *= q;
+						products[k - N] *= (int64_t)q;
 					}
 				}
 				q *= p;

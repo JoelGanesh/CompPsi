@@ -18,9 +18,6 @@
     <ClCompile Include="CompPsi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SegmentationArray.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PsiElemDVS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -28,12 +25,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SegmentedSieve.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Generic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="IO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DiophAppr.cpp">
@@ -45,19 +36,28 @@
     <ClCompile Include="PsiBF.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PsiElemIVS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Interval.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Complex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fraction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Elementary.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FFTSimple.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PsiPrep.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Fourier.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Types.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PsiElemIVS.cpp">
+    <ClCompile Include="PsiElem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

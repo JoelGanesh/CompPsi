@@ -1,22 +1,14 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#include <vector>
-#include <iostream>
-#include <stack>
-#include <functional>
-#include <string>
-
 #include "Types.h"
-using namespace Types;
 
 namespace Utility
 {
-	// Class for generic methods
 	class Generic
 	{
-	public:
-		// Apply function f: X -> Y to each of entries of v (which are of type X)
+		public:
+		// Apply function f: X -> Y to each entry of v (which are of type X).
 		template <typename X, typename Y>
 		static std::vector<Y> Map(std::vector<X> v, std::function<Y(X)> f)
 		{
@@ -45,18 +37,8 @@ namespace Utility
 			return res;
 		}
 
-		// Compute the sum of values of some function f over integers in some interval I.
-		// T should support addition.
-		//template <typename T>
-		//static T Sum(std::function<T(int64_t)> f, Interval I);
-
-		// Merges objects of a certain type together with a separator.
-		// It is assumed that an implict conversion from type S to type T has been implemented.
-		//template <typename S, typename T>
-		//static T Merge(std::vector<S> v, T sep, std::function<T(T, T)> merge);
-
 		// Finds the last index i such that v[i] <= value, assuming it exists,
-		// using a Binary Search approach. If it does not exist, returns 0.
+		// using Binary Search. If it does not exist, returns 0.
 		// Assumes that v[i] <= v[j] for i <= j, with '<' defined on T.
 		template <typename T>
 		static int64_t FindIndex(std::vector<T> v, T value)
@@ -107,18 +89,7 @@ namespace Utility
 			data.insert(data.end, n, T(0));
 		}
 	};
-
-	// Class specifically for finding Diophantine approximations.
-	class DiophAppr
-	{
-	public:
-		// Returns a tuple (p, p', q, s) of integers so that abs(alpha - p/q) <= 1/(qQ)
-		// with gcd(p, q) = 1, q <= Q, and pp' = 1 mod q, while s = sgn(alpha - p/q).
-		// Algorithm taken from a published paper from 2023 by H. A. Helfgott and L. Thompson.
-		static std::tuple<int, int, int, int> ApprByRedFrac(double alpha, int Q);
-	};
-
-	// Class helping with indexing certain objects.
+	
 	class Indexation
 	{
 		public:
@@ -135,34 +106,5 @@ namespace Utility
 		// Recursive function computing tuples (k_j, ..., k_d) as in 'RestrictedTuples' above, where j = index + 1.
 		static std::vector<std::vector<int>> RestrictedTuples(int n, std::vector<int> a, int64_t index);
 	};
-
-	// Class for functions related to input and output.
-	class IO
-	{
-	public:
-		// Shortcut for printing out arrays nicely.
-		// T should support conversion to string.
-		template <typename T>
-		static void Print(std::vector<T> v, std::string sep = " ")
-		{
-			std::cout << v[0];
-			for (int64_t n = 1; n < v.size(); n++)
-			{
-				std::cout << sep << v[n];
-			}
-			std::cout << std::endl;
-		}
-	};
-
-
-	/*class Interval
-	{
-	public:
-		// Create interval_set I so that x >= 1 lies in I iff ax^2 + bx + c >= 0.
-		static interval_set FromQuadIneq(int a, int b, int c);
-
-		// Create interval_set I such that x >= 1 in I iff ax + b >= 0.
-		static interval_set FromLinIneq(int a, int b);
-	};*/
-};
+}
 #endif

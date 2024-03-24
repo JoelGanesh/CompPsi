@@ -2,90 +2,80 @@
 #define TYPES_H
 
 #include <vector>
-#include <iostream>
-#include <stack>
-#include <functional>
-#include <string>
-#include <algorithm>
-#include <numeric>
 
-#include <boost/icl/interval.hpp>
-#include <boost/icl/interval_set.hpp>
 #include <boost/multiprecision/cpp_dec_float.hpp>
-#include <fftw3.h>
+#include <boost/multiprecision/cpp_bin_float.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
-typedef int     Exponent;
-typedef int64_t  Prime;
-typedef int64_t  PrimePower;
-typedef int  PrimeIndex;
+#define PRECISION 33
+#define DOUBLE_ERROR_THRESHOLD 1.0E-8
+
+typedef char Exponent;
+typedef int64_t Prime;
 typedef std::vector<int> Tuple;
 typedef std::vector<Tuple> Tuples;
 
-// Boost library shortcut typenames.
-//using interval = boost::icl::interval<int>;
-//using interval_set = boost::icl::interval_set<int>;
-using float_dec_100 = boost::multiprecision::cpp_dec_float_100;
-using complex_128 = boost::multiprecision::complex128;
-
-using namespace boost::multiprecision;
-//typedef boost::multiprecision::int128_t int128_t;
+typedef boost::multiprecision::int128_t int128_t;
+typedef boost::multiprecision::cpp_bin_float_quad float128_t;
+typedef boost::multiprecision::number<boost::multiprecision::cpp_dec_float<PRECISION>> float_dec_T;
 
 namespace Types
 {
 	struct Complex
 	{
-		float_dec_100 re;
-		float_dec_100 im;
+		float_dec_T re;
+		float_dec_T im;
 
-		Complex(float_dec_100 real = float_dec_100(0), float_dec_100 imag = float_dec_100(0))
-		{
-			re = real;
-			im = imag;
-		}
+		Complex(float_dec_T real = 0, float_dec_T imag = 0);
 
-		Complex& operator*=(Complex z)
-		{
-			//std::cout << std::string(*this) << " " << std::string(z) << std::endl;
-			float_dec_100 temp = re * z.re - im * z.im;
-			float_dec_100 temp2 = re * z.im + im * z.re;
-
-			re = temp;
-			im = temp2;
-
-			//std::cout << std::string(*this) << std::endl;
-
-			return *this;
-		}
-
-		Complex operator*(Complex z)
-		{
-			return Complex(re * z.re - im * z.im, re * z.im + im * z.re);
-		}
-
-		Complex operator+(Complex z)
-		{
-			return Complex(re + z.re, im + z.im);
-		}
-
-		Complex operator-(Complex z)
-		{
-			return Complex(re - z.re, im - z.im);
-		}
-
-		operator std::string()
-		{
-			return re.str(6) + " + " + im.str(6) + "i";
-		}
+		Complex& operator*=(Complex z);
+		Complex operator*(Complex z);
+		Complex operator+(Complex z);
+		Complex operator-(Complex z);
 	};
 
-	struct Rectangle
+	struct Fraction
 	{
-		int64_t N, M, m0, d0, a, b, a0, a0_inv, q, s;
-		double delta;
+		int128_t num;
+		int128_t denom;
 
-		Rectangle(int64_t N, int64_t M, int64_t m0, int64_t d0, int64_t a, int64_t b);
+		Fraction(int128_t num, int128_t denom = 1) : num(num), denom(denom)
+		{ }
 
-		std::tuple<double, int64_t> beta_r0(int64_t m);
+		// Return a numerical representation of the fraction.
+		float128_t numerical() const;
+
+		// Returns the floor as integer.
+		int128_t Floor() const;
+
+		// Rounds the fraction to the nearest integer.
+		int128_t Round() const;
+
+		// Returns fractional part as a fraction.
+		Fraction FractionalPart() const;
+
+		// Returns the sign of the fraction: 1 if positive, -1 if negative, 0 if 0.
+		int Sign() const;
+
+		// Checks if the fraction is an integer.
+		bool IsIntegral() const;
+
+		// Checks if the fraction is negative.
+		bool IsNegative() const;
+
+		// Checks if the fraction is zero.
+		bool IsZero() const;
+
+		// Inverts the fraction.
+		void Invert();
+
+		// Negates the fraction.
+		void Negate();
+
+		Fraction operator*(Fraction f);
+		Fraction operator+(Fraction f);
+		Fraction operator-(Fraction f);
+		Fraction operator/(Fraction f);
 	};
 
 	struct Interval
@@ -95,9 +85,7 @@ namespace Types
 
 		// Returns an interval [start, end].
 		// If start > end, should be read as an empty interval.
-		Interval(int64_t start = 1, int64_t end = 0) : start(start), end(end)
-		{
-		};
+		Interval(int64_t start = 1, int64_t end = 0);
 
 		// Returns the integer interval enclosed 
 		// by the roots of the quadratic ax^2 + bx + c.
@@ -105,53 +93,13 @@ namespace Types
 		// if a > 0, we instead disregard them,
 		// according to the implementation by Helfgott & Thompson.
 		// Requires that a != 0.
-		Interval(int64_t a, int64_t b, int64_t c) : start(1), end(0)
-		{
-			int64_t D = b * b - 4 * a * c;
-			if (D >= 0)
-			{
-				int64_t Q = std::sqrt(D);
-				if (a < 0)
-				{
-					start = std::ceil((double)(-b + Q) / (2 * a));
-					end = std::floor((double)(-b - Q) / (2 * a));
-				}
-				else if (a > 0)
-				{
-					// We have to distinguish the possibilities of D being a square or not;
-					// for certain values of a and b this results in a different integer interval.
-					if (Q * Q != D)
-					{
-						start = std::ceil((double)(-b - Q) / (2 * a));
-						end = std::floor((double)(-b + Q) / (2 * a));
-					}
-					else
-					{
-						start = std::floor((double)(-b - Q) / (2 * a)) + 1;
-						end = std::ceil((double)(-b + Q) / (2 * a)) - 1;
-					}
-				}
-			}
-		};
+		Interval(int64_t a, int64_t b, int64_t c);
 
-		void Shift(int64_t a)
-		{
-			if (start != LLONG_MIN && start != LLONG_MAX)
-			{
-				start += a;
-			}
-			if (end != LLONG_MIN && end != LLONG_MAX)
-			{
-				end += a;
-			}
-		}
+		// Shifts 'this' by 'a' units (x -> x + a).
+		void Shift(int64_t a);
 
-		// Intersects this interval with I.
-		void Intersect(Interval I)
-		{
-			start = std::max(start, I.start);
-			end = std::min(end, I.end);
-		};
+		// Intersects 'this' with I.
+		void Intersect(Interval& I);
 	};
 
 	// Placeholder for logarithms of positive integers.
@@ -159,13 +107,20 @@ namespace Types
 	{
 		int64_t n;
 
-		// Constructor
-		Log(int64_t n);
+		Log(int64_t n) : n(n)
+		{ }
 
-		// Retrieve approximate value.
-		float_dec_100 numerical() const;
+		// Returns approximation of 'this' as float_dec_T.
+		float_dec_T numerical() const
+		{
+			if (n > 1)
+			{
+				return boost::multiprecision::log(float_dec_T(n));
+			}
+			return 0;
+		}
 
-		operator float_dec_100()
+		operator float_dec_T()
 		{
 			return numerical();
 		}
@@ -178,10 +133,14 @@ namespace Types
 		Prime prime;
 		Exponent exponent;
 
-		PrimeFactor(Prime p, Exponent exp);
+		PrimeFactor(Prime p, Exponent exp) : prime(p), exponent(exp)
+		{ }
 
-		operator int64_t();
-		operator std::string();
+		// Returns integer presentation of the prime factor.
+		operator int64_t()
+		{
+			return (int64_t)std::pow(prime, exponent);
+		}
 	};
 
 	// Structure to store the primefactorization of an integer.
@@ -189,192 +148,38 @@ namespace Types
 	struct Factorization
 	{
 		private:
+		// List of prime factors.
 		std::vector<PrimeFactor> primeFactors_;
-
-		// Product of the prime factors which have been added
-		// with corresponding parameter 'update_n' equal to true.
-		int64_t n_;
-
-		public:
-		// Constructor
-		Factorization() : n_(1) {};
-
-		// Returns n_.
-		const int64_t n();
-
-		// Make it possible to read the prime factors
-		// without being able to change them out-of-scope.
-		const std::vector<PrimeFactor> primeFactors();
-
-		void AddFactor(Prime p, Exponent k, bool update_n = false);
-
-		operator std::string();
-	};
-
-	struct Fraction
-	{
-		public:
-		int64_t num;
-		int64_t denom;
-
-		Fraction(int64_t num, int64_t denom) : num(num), denom(denom)
-		{
-			//Normalize();
-		};
-
-		Fraction(int64_t num) : num(num), denom(1)
-		{};
-
-		double numerical() const
-		{
-			if (denom != 0)
-			{
-				return (double)num / denom;
-			}
-			return 1;
-		};
-
-		int64_t Floor() const
-		{
-			if (num < 0 && num % denom != 0)
-			{
-				return (num / denom) - 1;
-			}
-			return num / denom;
-		}
-
-		bool IsIntegral() const
-		{
-			return num % denom == 0;
-		}
-
-		bool IsNegative() const
-		{
-			if (denom > 0)
-			{
-				return num < 0;
-			}
-			else return num > 0;
-		}
-
-		bool IsZero() const
-		{
-			return num == 0;
-		}
-
-		int Sign() const
-		{
-			if (IsNegative())
-			{
-				return -1;
-			}
-			else if (IsZero())
-			{
-				return 0;
-			}
-			return 1;
-		}
-
-		Fraction operator*(Fraction f)
-		{
-			return Fraction(num * f.num, denom * f.denom);
-		};
-
-		Fraction operator+(Fraction f)
-		{
-			return Fraction(num * f.denom + f.num * denom,
-							denom * f.denom);
-		};
-
-		Fraction operator-(Fraction f)
-		{
-			return Fraction(num * f.denom - f.num * denom, 
-							denom * f.denom);
-		};
-
-		Fraction operator/(Fraction f)
-		{
-			return Fraction(num * f.denom, denom * f.num);
-		};
-
-		void Invert()
-		{
-			int64_t num_temp = num;
-			num = denom;
-			denom = num_temp;
-
-		};
-
-		void Negate()
-		{
-			num *= -1;
-		}
-
-		// Fractional part; i.e., num/denom - floor(num/denom).
-		Fraction FractionalPart()
-		{
-			int64_t temp_num = num % denom;
-			if (temp_num < 0)
-			{
-				temp_num += denom;
-			}
-			return Fraction(temp_num, denom);
-		};
-
-		private:
-		// Makes sure that denominator stays positive,
-		// also reduces fraction if possible.
-		void Normalize()
-		{
-			if (denom < 0)
-			{
-				num *= -1;
-				denom *= -1;
-			}
-
-			int64_t d = std::_Gcd(num, denom);
-			num /= d;
-			denom /= d;
-		}
-	};
-	/*
-	// Structure to store the prime divisors of an integer.
-	struct SqFreeFactorization
-	{
-	protected:
-		std::vector<Prime> primes_;
 
 		// Product of the prime factors.
 		int64_t n_;
 
-	public:
+		public:
 		// Constructor
-		SqFreeFactorization() : n_(1), primes_() {};
+		Factorization() : n_(1)
+		{ }
 
-		const std::vector<Prime> Primes();
-		virtual int64_t n();
+		// Returns n_.
+		const int64_t n() const
+		{
+			return n_;
+		}
 
-		virtual void AddFactor(Prime p);
+		// Make it possible to read the prime factors
+		// without being able to change them out-of-scope.
+		const std::vector<PrimeFactor> primeFactors() const
+		{
+			return primeFactors_;
+		}
 
-		virtual operator std::string();
+		void AddFactor(Prime p, Exponent k, bool update_n = false)
+		{
+			primeFactors_.push_back(PrimeFactor(p, k));
+			if (update_n)
+			{
+				n_ *= (int64_t)std::pow(p, k);
+			}
+		}
 	};
-
-
-	struct PrimeFactorization : SqFreeFactorization
-	{
-	private:
-		std::vector<Exponent> multiplicities_;
-
-	public:
-		// Constructor
-		PrimeFactorization() : multiplicities_() {};
-
-		const std::vector<Exponent> Multiplicities();
-
-		void AddFactor(Prime p) override;
-		void AddFactor(Prime p, Exponent j, PrimePower q = 0);
-
-		operator std::string() override;
-	};*/
 }
 #endif // TYPES_H

@@ -1,12 +1,17 @@
 #include "CompPsi.h"
-#include "Fourier.h"
-#include "Types.h"
-
-using namespace Types;
+#include "Elementary.h"
 
 #include <chrono>
 
 Elementary::SegmentedSieve Elementary::sieve = Elementary::SegmentedSieve();
+
+enum COMP_MODE
+{
+	INVALID,
+	BF,
+	ELEM,
+	FFT
+};
 
 int main()
 {
@@ -14,43 +19,55 @@ int main()
 	CompPsi::PsiElem psiElem;
 	CompPsi::PsiFFT psiFFT;
 
-    uint64_t n = (uint64_t)(4);
-    while (true)
-    {
-        //std::cin >> k;
+	COMP_MODE mode = INVALID;
+	char c;
+	int64_t n;
+	int m;
+	while (mode == INVALID)
+	{
+		std::cout << "Usage: <mode> <initial value> <multiplier>\nmode: 'B' <-> Brute Force | 'E' <-> Elementary | 'F' <-> FFT" << std::endl;
+		std::cin >> c >> n >> m;
+		switch (c)
+		{
+			case 'B':
+			case 'b':
+				mode = BF;
+				break;
+			case 'E':
+			case 'e':
+				mode = ELEM;
+				break;
+			case 'F':
+			case 'f':
+				mode = FFT;
+				break;
+			default:
+				break;
+		}
+	}
 
-		//std::vector<double> v1(n, 1);
-		//std::vector<float_dec_100> v2(n, 1);
-		//std::vector<std::vector<double>> w1(k, v1);
-		//std::vector<std::vector<float_dec_100>> w2(k, v2);
+	std::chrono::steady_clock::time_point start, end;
+	for (;;)
+	{
+		start = std::chrono::high_resolution_clock::now();
+		std::string s;
+		switch (mode)
+		{
+			case BF:
+				s = psiBF.Psi(n).str(PRECISION);
+				break;
+			case ELEM:
+				s = psiElem.Psi(n).str(PRECISION);
+				break;
+			case FFT:
+				s = psiFFT.Psi(n).str(PRECISION);
+				break;
+		}
 
-		//Fourier::FFTSimple fftSimple(n, k);
-		//Fourier::FFTW fftw(n, k);
+		std::cout << "Psi(" << n << ") = " << s << std::endl;
+		end = std::chrono::high_resolution_clock::now();
+		std::cout << "Computation time = " << std::setprecision(8) << (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000 << "s" << std::endl;
 
-		//std::vector<double> x = fftw.Convolve(w1);
-		//std::vector<float_dec_100> y = fftSimple.Convolve(w2);
-
-        //Utility::IO::Print(x);
-        //std::function<std::string(float_dec_100)> f = [](float_dec_100 q) { return q.str(6); };
-        //Utility::IO::Print(Utility::Generic::Map(y, f));
-        
-        std::chrono::steady_clock::time_point start, end;
-        // start = std::chrono::high_resolution_clock::now();
-        //std::cout << std::setprecision(100) << "PsiBF(" << n << "): " << psiBF.Psi(n) << std::endl;
-        // auto end = std::chrono::high_resolution_clock::now();
-        //std::cout << "Computation took: " << std::setprecision(8) << (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000 << "s" << std::endl;
-
-        start = std::chrono::high_resolution_clock::now();
-        std::cout << std::setprecision(100) << "PsiElem(" << n << "): " << psiElem.Psi(n) << std::endl;
-        end = std::chrono::high_resolution_clock::now();
-        std::cout << "Computation took: " << std::setprecision(8) << (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()/1000000 << "s" << std::endl;
-
-        //start = std::chrono::high_resolution_clock::now();
-        //std::cout << std::setprecision(100) << "PsiFFT(" << n << "): " << psiFFT.Psi(n) << std::endl;
-        //end = std::chrono::high_resolution_clock::now();
-        //std::cout << "Computation took: " << std::setprecision(8) << (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000000 << "s" << std::endl;
-
-        n *= 2;
-        //std::cout << CompPsi::PsiElem::Psi(n) << std::endl;
-    }
+		n *= m;
+	}
 }

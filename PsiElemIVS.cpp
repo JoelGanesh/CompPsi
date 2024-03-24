@@ -1,10 +1,7 @@
 #include "CompPsi.h"
 #include "Elementary.h"
 
-#include <numeric>
 #include <functional>
-#include <boost/multiprecision/cpp_dec_float.hpp>
-//#include <boost/multiprecision/cpp_int.hpp>
 
 #define INFTY	LLONG_MAX
 #define MINFTY  LLONG_MIN
@@ -25,20 +22,6 @@ namespace CompPsi
 		DIAGONAL,
 		NON_DIAG
 	};
-
-	// Returns the sign of a real number.
-	static int Sgn(double delta)
-	{
-		if (delta < 0)
-		{
-			return -1;
-		}
-		if (delta > 0)
-		{
-			return 1;
-		}
-		return 0;
-	}
 
 	static int64_t Mod(int64_t a, int64_t q)
 	{
@@ -93,7 +76,7 @@ namespace CompPsi
 	// * G(n) = sum_{m in I_m : m <= n, m = n mod q} g(m);
 	// * rho(r) = sum_{m in I_m : a0(m-m0) = r mod q} g(m);
 	// * sigma(r) = sum_{m in I_m : a0(m-m0) mod q > q - r} g(m).
-	// It is assumed that T can be cast to float_dec_100.
+	// It is assumed that T can be cast to float_dec_T.
 	// Algorithm by Helfgott & Thompson, 2023.
 	template <typename T>
 	static std::tuple<std::vector<T>, std::vector<T>, std::vector<T>>
@@ -129,7 +112,7 @@ namespace CompPsi
 	}
 
 	// Returns the sum of values of g(n) for n of the form b + kq, for integers k with sk < 0.
-	// It is assumed that T can be cast to float_dec_100.
+	// It is assumed that T can be cast to float_dec_T.
 	// Algorithm by Helfgott & Thompson, 2023.
 	template <typename T>
 	static T RaySum(std::function<T(int64_t)> g, int64_t q, int64_t b, int s)
@@ -154,10 +137,10 @@ namespace CompPsi
 
 	// Returns sum_{(d,m) in [d0 - a, d0 + a) x [m0 - b, m0 + b)} f(d)g(m) (floor(alpha0 + alpha1 d) + floor(alpha2 m))
 	// by separation of variables.
-	// It is assumed that T1 and T2 can be cast to float_dec_100.
+	// It is assumed that T1 and T2 can be cast to float_dec_T.
 	// Algorithm by Helfgott & Thompson, 2023.
 	template <typename Tf, typename Tg>
-	static float_dec_100 LinearSum(std::function<Tf(int64_t)> f, std::function<Tg(int64_t)> g,
+	static float_dec_T LinearSum(std::function<Tf(int64_t)> f, std::function<Tg(int64_t)> g,
 								   int64_t a, int64_t b, int64_t N, int64_t d0, int64_t m0)
 	{
 		Tf S_f0(0), S_f1(0);
@@ -165,19 +148,12 @@ namespace CompPsi
 		for (int64_t d = -a; d < a; d++)
 		{
 			S_f0 += f(d);
-			S_f1 += f(d) * ((N * (d0 - d)) / (d0 * d0 * m0));
+			S_f1 += f(d) * (int64_t)(Fraction((int128_t)N * (d0 - d), (int128_t)d0 * d0 * m0).Floor());
 		}
 		for (int64_t m = -b; m < b; m++)
 		{
 			S_g0 += g(m);
-			int64_t k_num = -N * m;
-			int64_t k_den = d0 * m0 * m0;
-			int64_t k = k_num / k_den;
-			if (k_num % k_den != 0)
-			{
-				k--;
-			}
-			S_g1 += g(m) * k;
+			S_g1 += g(m) * (int64_t)(Fraction((int128_t)N * (-m), (int128_t)d0 * m0 * m0).Floor());
 		}
 		return S_f0 * S_g1 + S_f1 * S_g0;
 	}
@@ -185,7 +161,7 @@ namespace CompPsi
 	// Computation of L - L1 for a0(m-m0) + r0 = -1 mod q, with q > 1.
 	template <typename T>
 	static T Special1(std::vector<T> G, int64_t N, int64_t q, int64_t a, int64_t a_inv,
-								  int64_t R0, int64_t r0, int64_t m0, int64_t d, int64_t b)
+					  int64_t R0, int64_t r0, int64_t m0, int64_t d, int64_t b)
 	{
 		// Note that a0m + r0 = -1 mod q iff m = r mod q, with r = (-1 - r0) * a_inv.
 		int64_t r = a_inv * (-1 - r0);
@@ -256,7 +232,6 @@ namespace CompPsi
 			else
 			{
 				J[j] = Interval(N / (d * (R0 + r0 + j)) - m0 + 1, INFTY);
-				//J[j] = Interval(MINFTY, N / (d * ((int64_t)std::floor(R0) + r0 + j)) - m0);
 			}
 		}
 
@@ -334,35 +309,19 @@ namespace CompPsi
 	// It is assumed that a and b are such that the error in
 	// the linear approximation of N/xy is less than 1/2b.
 	template <typename Tf, typename Tg>
-	static float_dec_100 SumByLinAppr(std::function<Tf(int64_t)> f, std::function<Tg(int64_t)> g, int64_t N, 
+	static float_dec_T SumByLinAppr(std::function<Tf(int64_t)> f, std::function<Tg(int64_t)> g, int64_t N, 
 									  int64_t d0, int64_t m0, int64_t a, int64_t b)
 	{
-		//Fraction alpha0 = Fraction(N, d0 * m0);
-		//Fraction alpha1 = Fraction(-N, d0 * d0 * m0);
-		Fraction alpha2 = Fraction(-N, d0 * m0 * m0);
+		Fraction alpha = Fraction(-N, (int128_t)d0 * m0 * m0);
 
-		/*
-		std::function<int64_t(int64_t, int64_t)> L = [N, d0, m0](int64_t d, int64_t m)
-			{
-				return N / ((d + d0) * (m + m0));
-			};
-		std::function<int64_t(int64_t, int64_t)> L1 = [N, d0, m0](int64_t d, int64_t m)
-			{
-				return std::floor((double)(N * (d0 * m0 - d * m0 - m * d0)) / (d0 * d0 * m0 * m0));
-			};
-		std::function<int64_t(int64_t, int64_t)> L2 = [N, d0, m0](int64_t d, int64_t m)
-			{
-				return (N * (d0 * m0 - d * m0)) / (d0 * d0 * m0 * m0) + std::floor((double)(-(N * m)) / (d0 * m0 * m0));
-			};*/
+		float_dec_T S = LinearSum(f, g, a, b, N, d0, m0);
 
-		float_dec_100 S = LinearSum(f, g, a, b, N, d0, m0);
-
-		std::tuple<int64_t, int64_t, int64_t, int> tuple = Elementary::DiophAppr::ApprByRedFrac(alpha2, 2 * b);
-		int64_t a0 = std::get<0>(tuple);
-		int64_t a0_inv = std::get<1>(tuple);
-		int64_t q = std::get<2>(tuple); 
+		std::tuple<int128_t, int128_t, int128_t, int> tuple = Elementary::DiophAppr::ApprByRedFrac(alpha, 2 * b);
+		int64_t a0 = (int64_t) std::get<0>(tuple);
+		int64_t a0_inv = (int64_t) std::get<1>(tuple);
+		int64_t q = (int64_t) std::get<2>(tuple); 
 		int sgn_delta = std::get<3>(tuple);
-		Fraction delta = alpha2 - Fraction(a0, q);
+		Fraction delta = alpha - Fraction(a0, q);
 
 		Tg raySum = RaySum<Tg>(g, q, b, sgn_delta);
 
@@ -376,23 +335,18 @@ namespace CompPsi
 		{
 			if (f(d) != 0) // I.e., f(d) is non-zero.
 			{
-				int64_t R0_num = N * (d0 - d);
-				int64_t R0_denom = d0 * d0 * m0;
-				int64_t R0 = R0_num / R0_denom;
-				//Fraction R0 = alpha0 + alpha1 * Fraction(d);
-				//double R0_frac = R0 - R0.Floor();
-				//Fraction R0_frac = R0.FractionalPart();
-
-				int64_t R0_frac_num = R0_num % R0_denom;
-				int64_t r0 = (2 * q * R0_frac_num + R0_denom) / (2 * R0_denom);
 				int64_t d_ = d0 + d;
-				Fraction beta = Fraction(q * R0_frac_num - r0 * R0_denom, q * R0_denom);
+
+				Fraction R0 = Fraction(N * (d0 - d), d0 * d0 * m0);
+				Fraction R0_frac = R0.FractionalPart();
+				int64_t r0 = (int64_t) ((R0_frac * Fraction(q)).Round());
+				Fraction beta = R0_frac - Fraction(r0, q);
 				int sgn_beta = beta.Sign();
 
 				double Q(1);
 				if (sgn_delta != 0)
 				{
-					Q = (beta / delta).numerical();
+					Q = (double)((beta / delta).numerical());
 				}
 
 				// Computation of difference g(m) * (L(d, m) - L1(d, m)) for m : a0(m - m0) + r0 = 0, -1 mod q.
@@ -401,14 +355,14 @@ namespace CompPsi
 				if (q > 1)
 				{
 					// Account for case a0(m - m0) + r0 = -1 mod q.
-					T1 += Special1<Tg>(G, N, q, a0, a0_inv, R0, r0, m0, d_, b);
+					T1 += Special1<Tg>(G, N, q, a0, a0_inv, (int64_t)(R0.Floor()), r0, m0, d_, b);
 
 					// Account for case a0(m - m0) + r0 = 0 mod q.
-					T1 += Special0B<Tg>(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_beta, sgn_delta);
+					T1 += Special0B<Tg>(G, N, q, a0, a0_inv, (int64_t)(R0.Floor()), r0, m0, d_, b, Q, sgn_beta, sgn_delta);
 				}
 				else // Case q = 1.
 				{
-					T1 += Special00<Tg>(G, N, q, a0, a0_inv, R0, r0, m0, d_, b, Q, sgn_delta);
+					T1 += Special00<Tg>(G, N, q, a0, a0_inv, (int64_t)(R0.Floor()), r0, m0, d_, b, Q, sgn_delta);
 				}
 
 				// Computation of difference g(m) * (L1(d, m) - L2(d, m)).
@@ -423,41 +377,18 @@ namespace CompPsi
 				// Contribution of m s.t. a0(m - m0) + r0 = 0 mod q.
 				T2 += Special0A<Tg>(G, q, a0, a0_inv, r0, b, Q, sgn_beta, sgn_delta);
 
-				/*
-				Tg sum_LmL1(0), sum_L1mL2(0);
-				for (int m = -b; m < b; m++)
-				{
-					sum_LmL1 += g(m) * (L(d, m) - L1(d, m));
-					sum_L1mL2 += g(m) * (L1(d, m) - L2(d, m));
-				}
-				if (T1 - sum_LmL1 > 0.01 || T1 - sum_LmL1 < -0.01 || T2 - sum_L1mL2 > 0.01 || T2 - sum_L1mL2 < -0.01)
-				{
-					d--;
-					if (T1 - sum_LmL1 > 0.01 || T1 - sum_LmL1 < -0.01)
-					{
-						//std::cout << "d: " << d0 + d << ", m: " << m0 - b << " -- " << m0 + b - 1 << std::endl;
-						std::cout << "T1: " << T1 << ", sum_LmL1: " << sum_LmL1 << std::endl;
-					}
-					if (T2 - sum_L1mL2 > 0.01 || T2 - sum_L1mL2 < -0.01)
-					{
-						//std::cout << "d: " << d0 + d << ", m: " << m0 - b << " -- " << m0 + b - 1 << std::endl;
-						std::cout << "T2: " << T2 << ", sum_L1mL2: " << sum_L1mL2 << std::endl;
-					}
-					continue;
-				}*/
 				S += (T1 + T2) * f(d);
 			}
 		}
-		//std::cout << d0 - a << " " << d0 + a << " " << m0 - b << " " << m0 + b << std::endl;//": " << S << std::endl;
 		return S;
 	}
 
 	// Computes the sum of f(d)g(m)floor(N/dm) over the rectangle [d0, d1) x [m0, m1) by brute force.
-	// It is assumed that T1 and T2 can be cast to the type float_dec_100.
-	static float_dec_100 BruteDoubleSum(int64_t d0, int64_t d1, int64_t m0, int64_t m1,
+	// It is assumed that T1 and T2 can be cast to the type float_dec_T.
+	static float_dec_T BruteDoubleSum(int64_t d0, int64_t d1, int64_t m0, int64_t m1,
 										std::vector<Log> f, std::vector<int> g, int64_t N)
 	{
-		float_dec_100 S(0);
+		float_dec_T S(0);
 		for (int64_t d = d0; d < d1; d++)
 		{
 			int64_t T(0);
@@ -474,10 +405,10 @@ namespace CompPsi
 	// Computes the sum of f(d)g(m)floor(N/dm) over the rectangle [d0, d1) x [m0, m1) by
 	// linear approximation of the term floor(N/dm) on small rectangles of fixed size a * b.
 	template <typename Tf, typename Tg>
-	static float_dec_100 DoubleSum(int64_t d0, int64_t d1, int64_t m0, int64_t m1, int64_t a, int64_t b,
+	static float_dec_T DoubleSum(int64_t d0, int64_t d1, int64_t m0, int64_t m1, int64_t a, int64_t b,
 								   std::function<Tf(int64_t)> f, std::function<Tg(int64_t)> g, int64_t N)
 	{
-		float_dec_100 S(0);
+		float_dec_T S(0);
 		int64_t mm = m0, dm = d0;
 		for (int64_t dm = d0; dm < d1; dm += 2 * a)
 		{
@@ -501,15 +432,15 @@ namespace CompPsi
 		return S;
 	}
 
-	float_dec_100 DDSum(int64_t A0, int64_t A1, int64_t B0, int64_t B1, int64_t N, int64_t D, 
+	float_dec_T DDSum(int64_t A0, int64_t A1, int64_t B0, int64_t B1, int64_t N, int64_t D, 
 						COMP_MODE comp_mode, int64_t a, int64_t b, DIAG_MODE diag_mode)
 	{
-		float_dec_100 S(0);
+		float_dec_T S(0);
 
 		std::vector<int> mu_d, mu_m;
 		std::function<int64_t(int64_t)> m_d, m_m;
 		std::vector<Log> Lambda_d, Lambda_m;
-		std::function<float_dec_100(int64_t)> L_d, L_m;
+		std::function<float_dec_T(int64_t)> L_d, L_m;
 		for (int64_t d0 = A0; d0 < A1; d0 += D)
 		{
 			int64_t d1 = std::min(d0 + D, A1);
@@ -547,20 +478,16 @@ namespace CompPsi
 				switch (comp_mode)
 				{
 					case LINEAR_APPR:
-						//std::cout << "Lin-appr: " << d0 << " " << d1 << " " << m0 << " " << m1 << std::endl;
 						S += DoubleSum(d0, d1, m0, m1, a, b, L_d, m_m, N);
 						if (diag_mode == NON_DIAG)
 						{
-							//std::cout << "Lin-appr: " << m0 << " " << m1 << " " << d0 << " " << d1 << std::endl;
-							S += DoubleSum<int64_t, float_dec_100>(d0, d1, m0, m1, a, b, m_d, L_m, N);
+							S += DoubleSum<int64_t, float_dec_T>(d0, d1, m0, m1, a, b, m_d, L_m, N);
 						}
 						break;
 					case BRUTE_FORCE:
-						//std::cout << "Brute-force: " << d0 << " " << d1 << " " << m0 << " " << m1 << std::endl;
 						S += BruteDoubleSum(d0, d1, m0, m1, Lambda_d, mu_m, N);
 						if (diag_mode == NON_DIAG)
 						{
-							//std::cout << "Brute-force: " << m0 << " " << m1 << " " << d0 << " " << d1 << std::endl;
 							S += BruteDoubleSum(m0, m1, d0, d1, Lambda_m, mu_d, N);
 						}
 						break;
@@ -572,48 +499,40 @@ namespace CompPsi
 
 	// Returns sum_{mdk <= N, m,d <= M0} Lambda(m)mu(d) = sum_{m,d <= M0} Lambda(m)mu(d)floor(N/md).
 	// Based on algorithm by Helfgott & Thompson, 2023.
-	float_dec_100 PsiElem::IndependentVar(int64_t N, int64_t M0)
+	float_dec_T PsiElem::IndependentVar(int64_t N, int64_t M0)
 	{
-		float_dec_100 S(0);
+		float_dec_T S(0);
 		int64_t A1 = M0 + 1, B1 = M0 + 1;
 		int64_t C = 10, D = 8; // Hand-tuned by Helfgott & Thompson, 2023.
 
 		while (A1 >= 2 * std::pow(6 * C * C * C * N, 0.25) &&
-			   A1 >= std::sqrt(M0) + 1 &&
-			   A1 >= 2 * D)
+			   A1 >= std::sqrt(M0) + 1 && A1 >= 2 * D)
 		{
 			int64_t A = A1 - 2 * (A1 / (2 * D));
 			double cbrt = std::cbrt((double)A / (6 * N));
 			int64_t a = A * cbrt;
 			while (B1 >= 2 * C * std::cbrt(6 * N / A) &&
-				   B1 >= std::sqrt(M0) + 1 &&
-				   B1 >= 2 * D)
+				   B1 >= std::sqrt(M0) + 1 && B1 >= 2 * D)
 			{
 				int64_t B = B1 - 2 * (B1 / (2 * D));
 				int64_t b = B * cbrt;
 
 				int64_t D = (1 + M0 / std::max(2 * a, 2 * b)) * std::max(2 * a, 2 * b);
-
 				DIAG_MODE diag_mode = (A == B && A1 == B1) ? DIAGONAL : NON_DIAG;
-				//std::cout << "REGION: " << A << " " << A1 << ", " << B << " " << B1 << std::endl;
-				S += DDSum(A, A1, B, B1, N, D, LINEAR_APPR, a, b, diag_mode);
 
+				S += DDSum(A, A1, B, B1, N, D, LINEAR_APPR, a, b, diag_mode);
 				B1 = B;
 			}
 
-
 			// Remaining part is done by brute force.
-			//std::cout << "REGION: " << A << " " << A1 << ", " << "1" << " " << B1 << std::endl;
 			S += DDSum(A, A1, 1, B1, N, std::sqrt(M0) + 1, BRUTE_FORCE, 0, 0, NON_DIAG);
 			A1 = A;
 			B1 = A;
 		}
 
 		// The remaining rectangle is done again by brute force.
-		//std::cout << "REGION: " << "1" << " " << A1 << ", " << "1" << " " << B1 << std::endl;
 		S += DDSum(1, A1, 1, B1, N, std::sqrt(M0) + 1, BRUTE_FORCE, 0, 0, DIAGONAL);
 
-		//std::cout << "IV: " << S << std::endl;
 		return S;
 	}
 }
