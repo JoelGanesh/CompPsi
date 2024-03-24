@@ -51,13 +51,13 @@ namespace Fourier
 		virtual void InitializeContainer(CC_Container& Fv) = 0;
 
 		virtual void DestructContainer(CC_Container& Fv) {};
-		virtual void Multiply(CC_Container& Fv, CC_Container Fv_i) = 0;
+		virtual void Multiply(CC_Container& Fv, CC_Container& Fv_i) = 0;
 
 		// Pure virtual function that computes the Fourier transform of a vector.
-		virtual CC_Container FFT(std::vector<RR> in) = 0;
+		virtual CC_Container FFT(std::vector<RR>& in) = 0;
 
 		// Pure virtual function that computes the inverse Fourier transform of a vector.
-		virtual std::vector<RR> IFFT(CC_Container in) = 0;
+		virtual std::vector<RR> IFFT(CC_Container& in) = 0;
 	};
 
 	class FFTSimple : public FFTLibrary<float_dec_T, Complex, std::vector<Complex>>
@@ -67,11 +67,11 @@ namespace Fourier
 
 		private:
 		void InitializeContainer(std::vector<Complex>& Fv) override;
-		void Multiply(std::vector<Complex>& Fv, std::vector<Complex> Fv_i) override;
-		std::vector<Complex> FFT(std::vector<float_dec_T> v) override;
-		std::vector<float_dec_T> IFFT(std::vector<Complex> Fv) override;
+		void Multiply(std::vector<Complex>& Fv, std::vector<Complex>& Fv_i) override;
+		std::vector<Complex> FFT(std::vector<float_dec_T>& v) override;
+		std::vector<float_dec_T> IFFT(std::vector<Complex>& Fv) override;
 
-		std::vector<Complex> IFFT_(std::vector<Complex> Fv);
+		std::vector<Complex> IFFT_(std::vector<Complex>& Fv);
 	};
 }
 #endif // FOURIER_H

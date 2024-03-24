@@ -18,7 +18,7 @@ namespace Fourier
 		Fv = std::vector<Complex>(size, Complex(1, 0));
 	}
 
-	void FFTSimple::Multiply(std::vector<Complex>& Fv, std::vector<Complex> Fv_i)
+	void FFTSimple::Multiply(std::vector<Complex>& Fv, std::vector<Complex>& Fv_i)
 	{
 		for (int j = 0; j < size; j++)
 		{
@@ -26,7 +26,7 @@ namespace Fourier
 		}
 	}
 
-	std::vector<Complex> FFTSimple::FFT(std::vector<float_dec_T> v)
+	std::vector<Complex> FFTSimple::FFT(std::vector<float_dec_T>& v)
 	{
 		int n = v.size();
 		std::vector<Complex> Fv(n);
@@ -57,7 +57,7 @@ namespace Fourier
 		return Fv;
 	}
 
-	std::vector<float_dec_T> FFTSimple::IFFT(std::vector<Complex> Fv)
+	std::vector<float_dec_T> FFTSimple::IFFT(std::vector<Complex>& Fv)
 	{
 		std::vector<Complex> v = IFFT_(Fv);
 		std::vector<float_dec_T> w(v.size());
@@ -68,7 +68,7 @@ namespace Fourier
 		return w;
 	}
 
-	std::vector<Complex> FFTSimple::IFFT_(std::vector<Complex> Fv)
+	std::vector<Complex> FFTSimple::IFFT_(std::vector<Complex>& Fv)
 	{
 		int n = Fv.size();
 		std::vector<Complex> v(n);
