@@ -11,7 +11,7 @@ Three methods are supported:
 The elementary approach is based on a method by [Helfgott & Thompson (2023)](https://link.springer.com/article/10.1007/s40993-022-00408-8). The Fourier-theoretic approach is based on a method by [Hirsch, Kessler & Mendlovic (2023)](https://arxiv.org/abs/2212.09857).
 ## Dependencies
 
-Before using this application, it is necessary to download the latest version of [Boost](https://www.boost.org/users/download/). Make sure to also set it up correctly by linking it to the application using a C++ compiler of your choice. The corresponding steps should be explained 
+Before using this application, it is necessary to download the latest version of [Boost](https://www.boost.org/users/download/). Make sure to link the Boost files with the application. It is likely that the steps related to the setup are available at their website.
 
 ## Usage
 
